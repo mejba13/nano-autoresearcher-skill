@@ -1,0 +1,87 @@
+{
+  "skill_name": "nano-autoresearcher",
+  "iteration": 2,
+  "configurations": [
+    {
+      "name": "with_skill",
+      "evals": [
+        {
+          "eval_name": "session-setup-plan",
+          "pass_rate": 1.0,
+          "passed": 9,
+          "total": 9,
+          "tokens": 118919,
+          "duration_seconds": 60.3
+        },
+        {
+          "eval_name": "next-experiment-ideas",
+          "pass_rate": 1.0,
+          "passed": 6,
+          "total": 6,
+          "tokens": 115809,
+          "duration_seconds": 26.1
+        },
+        {
+          "eval_name": "small-hardware-mode",
+          "pass_rate": 1.0,
+          "passed": 7,
+          "total": 7,
+          "tokens": 116458,
+          "duration_seconds": 34.3
+        }
+      ],
+      "aggregate": {
+        "mean_pass_rate": 1.0,
+        "stddev_pass_rate": 0.0,
+        "mean_tokens": 117062,
+        "mean_duration_seconds": 40.2
+      }
+    },
+    {
+      "name": "without_skill",
+      "evals": [
+        {
+          "eval_name": "session-setup-plan",
+          "pass_rate": 0.333,
+          "passed": 3,
+          "total": 9,
+          "tokens": 108375,
+          "duration_seconds": 29.5
+        },
+        {
+          "eval_name": "next-experiment-ideas",
+          "pass_rate": 0.667,
+          "passed": 4,
+          "total": 6,
+          "tokens": 107562,
+          "duration_seconds": 21.6
+        },
+        {
+          "eval_name": "small-hardware-mode",
+          "pass_rate": 0.143,
+          "passed": 1,
+          "total": 7,
+          "tokens": 107153,
+          "duration_seconds": 20.3
+        }
+      ],
+      "aggregate": {
+        "mean_pass_rate": 0.381,
+        "stddev_pass_rate": 0.264,
+        "mean_tokens": 107697,
+        "mean_duration_seconds": 23.8
+      }
+    }
+  ],
+  "delta": {
+    "pass_rate_improvement": 0.619,
+    "token_overhead": 9365,
+    "duration_overhead_seconds": 16.4
+  },
+  "comparison_with_iteration_1": {
+    "iteration_1_with_skill_pass_rate": 0.952,
+    "iteration_2_with_skill_pass_rate": 1.0,
+    "improvement": 0.048,
+    "note": "Fixed TinyStories gap in small-hardware eval; added run.log redirect assertion; improved experiment strategy guidance"
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "skill_name": "nano-autoresearcher",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "I just cloned karpathy's autoresearch repo onto my H100 machine. Start a new autoresearch session for me. Walk me through what you'd do step by step — don't actually run anything yet, just show me the plan and the first experiment you'd try after the baseline.",
+      "expected_output": "Claude should: (1) say it will read program.md first, (2) list the preflight steps (uv sync, nvidia-smi, verify data, create branch), (3) explain the baseline run, (4) initialize results.tsv, (5) propose a session plan with a clear first hypothesis and a specific edit to train.py. Should NOT suggest editing prepare.py or installing new packages.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "I'm running autoresearch experiments. Here are my last 5 results:\n\ncommit\tval_bpb\tmemory_gb\tstatus\tdescription\na1b2c3d\t0.9979\t44.0\tkeep\tbaseline\nb2c3d4e\t0.9932\t44.2\tkeep\tincrease MATRIX_LR to 0.06\nc3d4e5f\t1.0050\t44.0\tdiscard\tswitch MLP to GELU\nd4e5f6g\t0.0000\t0.0\tcrash\tDEPTH=16 (OOM)\ne5f6g7h\t0.9918\t45.1\tkeep\tDEPTH=10 with DEVICE_BATCH_SIZE=96\n\nWhat should I try next? Give me 3 concrete experiment ideas ranked by how promising they are, with specific values to change.",
+      "expected_output": "Claude should analyze the results log intelligently: note that higher LR helped, GELU hurt, DEPTH=16 was too big but DEPTH=10 worked. Should propose 3 specific experiments with concrete hyperparameter values (not vague suggestions). Ideas should build on what worked (e.g., explore LR further around 0.06, try DEPTH=10 with other optimizations, explore WINDOW_PATTERN). Should not suggest changes to prepare.py or MAX_SEQ_LEN.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "I want to run autoresearch on my laptop with an RTX 3060 (12GB VRAM). Can you set me up for small hardware mode?",
+      "expected_output": "Claude should activate small-hardware mode: recommend reducing DEPTH (e.g., 4), lowering DEVICE_BATCH_SIZE (e.g., 32), lowering TOTAL_BATCH_SIZE (e.g., 2**17), suggest WINDOW_PATTERN='L', mention running prepare.py with fewer shards, and optionally mention TinyStories for even smaller setups. Should warn about expected OOM risk with defaults and give specific values, not just 'reduce these'.",
+      "files": []
+    }
+  ]
+}

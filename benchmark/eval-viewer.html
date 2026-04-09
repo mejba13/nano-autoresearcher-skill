@@ -1,0 +1,1325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Eval Review</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600&family=Lora:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js" integrity="sha384-EnyY0/GSHQGSxSgMwaIPzSESbqoOLSexfnSMN2AP+39Ckmn92stwABZynq1JyzdT" crossorigin="anonymous"></script>
+  <style>
+    :root {
+      --bg: #faf9f5;
+      --surface: #ffffff;
+      --border: #e8e6dc;
+      --text: #141413;
+      --text-muted: #b0aea5;
+      --accent: #d97757;
+      --accent-hover: #c4613f;
+      --green: #788c5d;
+      --green-bg: #eef2e8;
+      --red: #c44;
+      --red-bg: #fceaea;
+      --header-bg: #141413;
+      --header-text: #faf9f5;
+      --radius: 6px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Lora', Georgia, serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ---- Header ---- */
+    .header {
+      background: var(--header-bg);
+      color: var(--header-text);
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+    }
+    .header h1 {
+      font-family: 'Poppins', sans-serif;
+      font-size: 1.25rem;
+      font-weight: 600;
+    }
+    .header .instructions {
+      font-size: 0.8rem;
+      opacity: 0.7;
+      margin-top: 0.25rem;
+    }
+    .header .progress {
+      font-size: 0.875rem;
+      opacity: 0.8;
+      text-align: right;
+    }
+
+    /* ---- Main content ---- */
+    .main {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1.5rem 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    /* ---- Sections ---- */
+    .section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      flex-shrink: 0;
+    }
+    .section-header {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.75rem 1rem;
+      font-size: 0.75rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border);
+      background: var(--bg);
+    }
+    .section-body {
+      padding: 1rem;
+    }
+
+    /* ---- Config badge ---- */
+    .config-badge {
+      display: inline-block;
+      padding: 0.2rem 0.625rem;
+      border-radius: 9999px;
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.6875rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      margin-left: 0.75rem;
+      vertical-align: middle;
+    }
+    .config-badge.config-primary {
+      background: rgba(33, 150, 243, 0.12);
+      color: #1976d2;
+    }
+    .config-badge.config-baseline {
+      background: rgba(255, 193, 7, 0.15);
+      color: #f57f17;
+    }
+
+    /* ---- Prompt ---- */
+    .prompt-text {
+      white-space: pre-wrap;
+      font-size: 0.9375rem;
+      line-height: 1.6;
+    }
+
+    /* ---- Outputs ---- */
+    .output-file {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .output-file + .output-file {
+      margin-top: 1rem;
+    }
+    .output-file-header {
+      padding: 0.5rem 0.75rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      font-family: 'SF Mono', SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .output-file-header .dl-btn {
+      font-size: 0.7rem;
+      color: var(--accent);
+      text-decoration: none;
+      cursor: pointer;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-weight: 500;
+      opacity: 0.8;
+    }
+    .output-file-header .dl-btn:hover {
+      opacity: 1;
+      text-decoration: underline;
+    }
+    .output-file-content {
+      padding: 0.75rem;
+      overflow-x: auto;
+    }
+    .output-file-content pre {
+      font-size: 0.8125rem;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-family: 'SF Mono', SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace;
+    }
+    .output-file-content img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 4px;
+    }
+    .output-file-content iframe {
+      width: 100%;
+      height: 600px;
+      border: none;
+    }
+    .output-file-content table {
+      border-collapse: collapse;
+      font-size: 0.8125rem;
+      width: 100%;
+    }
+    .output-file-content table td,
+    .output-file-content table th {
+      border: 1px solid var(--border);
+      padding: 0.375rem 0.5rem;
+      text-align: left;
+    }
+    .output-file-content table th {
+      background: var(--bg);
+      font-weight: 600;
+    }
+    .output-file-content .download-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--accent);
+      text-decoration: none;
+      font-size: 0.875rem;
+      cursor: pointer;
+    }
+    .output-file-content .download-link:hover {
+      background: var(--border);
+    }
+    .empty-state {
+      color: var(--text-muted);
+      font-style: italic;
+      padding: 2rem;
+      text-align: center;
+    }
+
+    /* ---- Feedback ---- */
+    .prev-feedback {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 0.625rem 0.75rem;
+      margin-top: 0.75rem;
+      font-size: 0.8125rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+    .prev-feedback-label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 0.25rem;
+      color: var(--text-muted);
+    }
+    .feedback-textarea {
+      width: 100%;
+      min-height: 100px;
+      padding: 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-family: inherit;
+      font-size: 0.9375rem;
+      line-height: 1.5;
+      resize: vertical;
+      color: var(--text);
+    }
+    .feedback-textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+    .feedback-status {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 0.5rem;
+      min-height: 1.1em;
+    }
+
+    /* ---- Grades (collapsible) ---- */
+    .grades-toggle {
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      user-select: none;
+    }
+    .grades-toggle:hover {
+      color: var(--accent);
+    }
+    .grades-toggle .arrow {
+      margin-right: 0.5rem;
+      transition: transform 0.15s;
+      font-size: 0.75rem;
+    }
+    .grades-toggle .arrow.open {
+      transform: rotate(90deg);
+    }
+    .grades-content {
+      display: none;
+      margin-top: 0.75rem;
+    }
+    .grades-content.open {
+      display: block;
+    }
+    .grades-summary {
+      font-size: 0.875rem;
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .grade-badge {
+      display: inline-block;
+      padding: 0.125rem 0.5rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .grade-pass { background: var(--green-bg); color: var(--green); }
+    .grade-fail { background: var(--red-bg); color: var(--red); }
+    .assertion-list {
+      list-style: none;
+    }
+    .assertion-item {
+      padding: 0.625rem 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.8125rem;
+    }
+    .assertion-item:last-child { border-bottom: none; }
+    .assertion-status {
+      font-weight: 600;
+      margin-right: 0.5rem;
+    }
+    .assertion-status.pass { color: var(--green); }
+    .assertion-status.fail { color: var(--red); }
+    .assertion-evidence {
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      margin-top: 0.25rem;
+      padding-left: 1.5rem;
+    }
+
+    /* ---- View tabs ---- */
+    .view-tabs {
+      display: flex;
+      gap: 0;
+      padding: 0 2rem;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .view-tab {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.625rem 1.25rem;
+      font-size: 0.8125rem;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      background: none;
+      color: var(--text-muted);
+      border-bottom: 2px solid transparent;
+      transition: all 0.15s;
+    }
+    .view-tab:hover { color: var(--text); }
+    .view-tab.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+    .view-panel { display: none; }
+    .view-panel.active { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
+
+    /* ---- Benchmark view ---- */
+    .benchmark-view {
+      padding: 1.5rem 2rem;
+      overflow-y: auto;
+      flex: 1;
+    }
+    .benchmark-table {
+      border-collapse: collapse;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font-size: 0.8125rem;
+      width: 100%;
+      margin-bottom: 1.5rem;
+    }
+    .benchmark-table th, .benchmark-table td {
+      padding: 0.625rem 0.75rem;
+      text-align: left;
+      border: 1px solid var(--border);
+    }
+    .benchmark-table th {
+      font-family: 'Poppins', sans-serif;
+      background: var(--header-bg);
+      color: var(--header-text);
+      font-weight: 500;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .benchmark-table tr:hover { background: var(--bg); }
+    .benchmark-table tr.benchmark-row-with { background: rgba(33, 150, 243, 0.06); }
+    .benchmark-table tr.benchmark-row-without { background: rgba(255, 193, 7, 0.06); }
+    .benchmark-table tr.benchmark-row-with:hover { background: rgba(33, 150, 243, 0.12); }
+    .benchmark-table tr.benchmark-row-without:hover { background: rgba(255, 193, 7, 0.12); }
+    .benchmark-table tr.benchmark-row-avg { font-weight: 600; border-top: 2px solid var(--border); }
+    .benchmark-table tr.benchmark-row-avg.benchmark-row-with { background: rgba(33, 150, 243, 0.12); }
+    .benchmark-table tr.benchmark-row-avg.benchmark-row-without { background: rgba(255, 193, 7, 0.12); }
+    .benchmark-delta-positive { color: var(--green); font-weight: 600; }
+    .benchmark-delta-negative { color: var(--red); font-weight: 600; }
+    .benchmark-notes {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem;
+    }
+    .benchmark-notes h3 {
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.875rem;
+      margin-bottom: 0.75rem;
+    }
+    .benchmark-notes ul {
+      list-style: disc;
+      padding-left: 1.25rem;
+    }
+    .benchmark-notes li {
+      font-size: 0.8125rem;
+      line-height: 1.6;
+      margin-bottom: 0.375rem;
+    }
+    .benchmark-empty {
+      color: var(--text-muted);
+      font-style: italic;
+      text-align: center;
+      padding: 3rem;
+    }
+
+    /* ---- Navigation ---- */
+    .nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 2rem;
+      border-top: 1px solid var(--border);
+      background: var(--surface);
+      flex-shrink: 0;
+    }
+    .nav-btn {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.5rem 1.25rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      cursor: pointer;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--text);
+      transition: all 0.15s;
+    }
+    .nav-btn:hover:not(:disabled) {
+      background: var(--bg);
+      border-color: var(--text-muted);
+    }
+    .nav-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+    .done-btn {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.5rem 1.5rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      color: var(--text);
+      cursor: pointer;
+      font-size: 0.875rem;
+      font-weight: 500;
+      transition: all 0.15s;
+    }
+    .done-btn:hover {
+      background: var(--bg);
+      border-color: var(--text-muted);
+    }
+    .done-btn.ready {
+      border: none;
+      background: var(--accent);
+      color: white;
+      font-weight: 600;
+    }
+    .done-btn.ready:hover {
+      background: var(--accent-hover);
+    }
+    /* ---- Done overlay ---- */
+    .done-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 100;
+      justify-content: center;
+      align-items: center;
+    }
+    .done-overlay.visible {
+      display: flex;
+    }
+    .done-card {
+      background: var(--surface);
+      border-radius: 12px;
+      padding: 2rem 3rem;
+      text-align: center;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      max-width: 500px;
+    }
+    .done-card h2 {
+      font-size: 1.5rem;
+      margin-bottom: 0.5rem;
+    }
+    .done-card p {
+      color: var(--text-muted);
+      margin-bottom: 1.5rem;
+      line-height: 1.5;
+    }
+    .done-card .btn-row {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: center;
+    }
+    .done-card button {
+      padding: 0.5rem 1.25rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      cursor: pointer;
+      font-size: 0.875rem;
+    }
+    .done-card button:hover {
+      background: var(--bg);
+    }
+    /* ---- Toast ---- */
+    .toast {
+      position: fixed;
+      bottom: 5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--header-bg);
+      color: var(--header-text);
+      padding: 0.625rem 1.25rem;
+      border-radius: var(--radius);
+      font-size: 0.875rem;
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+      z-index: 200;
+    }
+    .toast.visible {
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+  <div id="app" style="height:100vh; display:flex; flex-direction:column;">
+    <div class="header">
+      <div>
+        <h1>Eval Review: <span id="skill-name"></span></h1>
+        <div class="instructions">Review each output and leave feedback below. Navigate with arrow keys or buttons. When done, copy feedback and paste into Claude Code.</div>
+      </div>
+      <div class="progress" id="progress"></div>
+    </div>
+
+    <!-- View tabs (only shown when benchmark data exists) -->
+    <div class="view-tabs" id="view-tabs" style="display:none;">
+      <button class="view-tab active" onclick="switchView('outputs')">Outputs</button>
+      <button class="view-tab" onclick="switchView('benchmark')">Benchmark</button>
+    </div>
+
+    <!-- Outputs panel (qualitative review) -->
+    <div class="view-panel active" id="panel-outputs">
+    <div class="main">
+      <!-- Prompt -->
+      <div class="section">
+        <div class="section-header">Prompt <span class="config-badge" id="config-badge" style="display:none;"></span></div>
+        <div class="section-body">
+          <div class="prompt-text" id="prompt-text"></div>
+        </div>
+      </div>
+
+      <!-- Outputs -->
+      <div class="section">
+        <div class="section-header">Output</div>
+        <div class="section-body" id="outputs-body">
+          <div class="empty-state">No output files found</div>
+        </div>
+      </div>
+
+      <!-- Previous Output (collapsible) -->
+      <div class="section" id="prev-outputs-section" style="display:none;">
+        <div class="section-header">
+          <div class="grades-toggle" onclick="togglePrevOutputs()">
+            <span class="arrow" id="prev-outputs-arrow">&#9654;</span>
+            Previous Output
+          </div>
+        </div>
+        <div class="grades-content" id="prev-outputs-content"></div>
+      </div>
+
+      <!-- Grades (collapsible) -->
+      <div class="section" id="grades-section" style="display:none;">
+        <div class="section-header">
+          <div class="grades-toggle" onclick="toggleGrades()">
+            <span class="arrow" id="grades-arrow">&#9654;</span>
+            Formal Grades
+          </div>
+        </div>
+        <div class="grades-content" id="grades-content"></div>
+      </div>
+
+      <!-- Feedback -->
+      <div class="section">
+        <div class="section-header">Your Feedback</div>
+        <div class="section-body">
+          <textarea
+            class="feedback-textarea"
+            id="feedback"
+            placeholder="What do you think of this output? Any issues, suggestions, or things that look great?"
+          ></textarea>
+          <div class="feedback-status" id="feedback-status"></div>
+          <div class="prev-feedback" id="prev-feedback" style="display:none;">
+            <div class="prev-feedback-label">Previous feedback</div>
+            <div id="prev-feedback-text"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="nav" id="outputs-nav">
+      <button class="nav-btn" id="prev-btn" onclick="navigate(-1)">&#8592; Previous</button>
+      <button class="done-btn" id="done-btn" onclick="showDoneDialog()">Submit All Reviews</button>
+      <button class="nav-btn" id="next-btn" onclick="navigate(1)">Next &#8594;</button>
+    </div>
+    </div><!-- end panel-outputs -->
+
+    <!-- Benchmark panel (quantitative stats) -->
+    <div class="view-panel" id="panel-benchmark">
+      <div class="benchmark-view" id="benchmark-content">
+        <div class="benchmark-empty">No benchmark data available. Run a benchmark to see quantitative results here.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Done overlay -->
+  <div class="done-overlay" id="done-overlay">
+    <div class="done-card">
+      <h2>Review Complete</h2>
+      <p>Your feedback has been saved. Go back to your Claude Code session and tell Claude you're done reviewing.</p>
+      <div class="btn-row">
+        <button onclick="closeDoneDialog()">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // ---- Embedded data (injected by generate_review.py) ----
+    const EMBEDDED_DATA = {"skill_name": "nano-autoresearcher", "runs": [{"id": "session-setup-plan-with_skill", "prompt": "I just cloned karpathy's autoresearch repo onto my H100 machine. Start a new autoresearch session for me. Walk me through what you'd do step by step \u2014 don't actually run anything yet, just show me the plan and the first experiment you'd try after the baseline.", "eval_id": 1, "outputs": [{"name": "response.md", "type": "text", "content": "# Autoresearch Session Setup Plan\n\n## Overview\n\nYou've cloned Karpathy's autoresearch repo to your H100. Here's the complete step-by-step plan for starting a new autonomous ML research session, followed by the first experiment I'd propose after establishing the baseline.\n\n---\n\n## Part 1: Preflight Checklist (Session Setup)\n\n### Step 1: Read the Instructions\n\n```bash\ncat program.md\n```\n\n**Why:** The human may have written session-specific goals, constraints, or research directions. This is mandatory\u2014never skip it.\n\n**Expected output:** A markdown file with your session's research objectives.\n\n---\n\n### Step 2: Verify the Environment\n\n```bash\nuv --version         # Confirm uv package manager is installed\nuv sync              # Install all dependencies from pyproject.toml\nnvidia-smi           # Verify NVIDIA GPU is available and usable\n```\n\n**Why:** The repo requires an NVIDIA GPU with CUDA and Flash Attention 3 support. Your H100 is ideal. If `nvidia-smi` fails, the session cannot proceed.\n\n**Expected output from nvidia-smi:** GPU model (H100), driver version, and \"No processes\" or active processes. You need ~40 GB VRAM for full experiments.\n\n---\n\n### Step 3: Prepare the Data (One-Time Setup)\n\n```bash\n# Check if data already exists\nls ~/.cache/autoresearch/data/ | head -5\nls ~/.cache/autoresearch/tokenizer/\n```\n\n**If empty or missing:**\n\n```bash\nuv run prepare.py\n```\n\n**Why:** Downloads ~10 parquet shards of text data and trains a BPE tokenizer (vocab_size=8192). This takes ~2 minutes and happens once per machine.\n\n**Expected output:** ~10-20 shards in `~/.cache/autoresearch/data/` and a tokenizer file in `~/.cache/autoresearch/tokenizer/`.\n\n---\n\n### Step 4: Create an Experiment Branch\n\n```bash\ngit checkout -b autoresearch/apr9\n```\n\n(Use today's date if different, e.g., `autoresearch/apr8`, `autoresearch/apr10`.)\n\n**If the branch already exists:**\n\n```bash\ngit checkout -b autoresearch/apr9-v2\n```\n\n**Why:** Git branching keeps this session's experiments separate. You can compare results across branches later.\n\n---\n\n### Step 5: Run the Baseline\n\n```bash\nuv run train.py > run.log 2>&1\ngrep \"^val_bpb:\\|^peak_vram_mb:\" run.log\n```\n\n**Why:** This is your reference point. Never skip this. All future experiments are measured against it.\n\n**Expected output:**\n```\nval_bpb: 0.998\npeak_vram_mb: 38500\n```\n\n(Exact values depend on your H100's state, but expect val_bpb in the range 0.99\u20131.01 and VRAM around 38\u201340 GB.)\n\n**What I'm looking for:**\n- A clean exit (no NaN, no OOM, no crash)\n- The val_bpb number (this becomes your baseline)\n- Peak VRAM usage (to check room for larger experiments)\n\n---\n\n### Step 6: Initialize results.tsv\n\n```\ncommit\tval_bpb\tmemory_gb\tstatus\tdescription\n<baseline-commit>\t0.998\t38.5\tkeep\tbaseline\n```\n\n**Format:** Tab-separated, not CSV. Columns are:\n- `commit`: Short 7-character git hash\n- `val_bpb`: Validation bits per byte (lower is better)\n- `memory_gb`: Peak VRAM in GB (peak_vram_mb / 1024, rounded to 1 decimal)\n- `status`: `keep`, `discard`, or `crash`\n- `description`: Human-readable summary\n\n**Where:** Save as `results.tsv` in the repo root. Do NOT git-commit it.\n\n---\n\n### Step 7: Review Prior Work (If Applicable)\n\nIf `results.tsv` already exists from a previous session on this branch:\n\n```bash\ncat results.tsv\n```\n\nLook for:\n- Which experiments were kept (cumulative improvements)\n- Which crashed (avoid similar patterns)\n- What areas haven't been explored yet\n\n**For this fresh session:** You'll likely be starting from scratch, so this file will be new.\n\n---\n\n### Step 8: Review the Codebase\n\nRead three key files (in this order):\n\n1. **program.md** \u2014 Your session instructions (already done in Step 1)\n2. **train.py** (~630 lines) \u2014 The only file you'll edit\n3. **prepare.py** \u2014 Frozen; understand it but never modify\n\n**Key facts about train.py:**\n- Lines 33\u2013106: `GPTConfig` dataclass and editable hyperparameter constants\n- Lines 43\u2013290: Architecture (CausalSelfAttention, MLP, Block, GPT)\n- Lines 294\u2013420: MuonAdamW optimizer (Muon for 2D matrices, AdamW for scalars)\n- Lines 428\u2013451: The 11 main hyperparameters you'll tune:\n  - `DEPTH`, `ASPECT_RATIO`, `HEAD_DIM`, `WINDOW_PATTERN`\n  - `TOTAL_BATCH_SIZE`, `DEVICE_BATCH_SIZE`\n  - `MATRIX_LR`, `EMBEDDING_LR`, `UNEMBEDDING_LR`, `SCALAR_LR`\n  - `WEIGHT_DECAY`, `WARMUP_RATIO`, `WARMDOWN_RATIO`, `FINAL_LR_FRAC`\n\n**What you cannot edit:**\n- `MAX_SEQ_LEN = 2048` (locked in prepare.py)\n- `TIME_BUDGET = 300` (the sacred 5-minute training window)\n- `VOCAB_SIZE = 8192` (set by prepare.py's tokenizer)\n- `prepare.py` itself, `pyproject.toml`, `uv.lock`\n\n---\n\n## Part 2: Proposed Session Plan\n\n### Session Goal\nFind incremental improvements to val_bpb through systematic hyperparameter exploration, following a proven sequence from high-signal (optimizer) to lower-risk (architecture).\n\n### Exploration Phases (Recommended)\n\n**Phase 1 \u2014 Optimizer Learning Rates (Experiments 1\u20134)**\n- Start here: LR changes are high-signal, low-risk, and fast to evaluate\n- Typical order: MATRIX_LR \u2192 EMBEDDING_LR \u2192 UNEMBEDDING_LR\n- Goal: Find the sweet spot for each before moving on\n\n**Phase 2 \u2014 Model Scale (Experiments 5\u20138)**\n- Explore depth/width trade-offs\n- Key insight: Deeper = more capacity but fewer steps per 5-minute budget\n- Try DEPTH and ASPECT_RATIO variations\n\n**Phase 3 \u2014 Schedule Tuning (Experiments 9\u201312)**\n- WARMDOWN_RATIO, FINAL_LR_FRAC, WARMUP_RATIO\n- These affect the learning trajectory and are orthogonal to LR magnitude\n\n**Phase 4 \u2014 Architecture (Experiments 13+)**\n- WINDOW_PATTERN, MLP activation, softcap values, value embedding patterns\n- Higher risk but can unlock step-changes in val_bpb\n\n---\n\n## Part 3: First Experiment After Baseline\n\n### Hypothesis\n\n**\"Increasing MATRIX_LR from 0.04 to 0.06 will improve val_bpb because the Muon optimizer can take larger optimization steps toward the loss minimum within the 300-second training window. MATRIX_LR governs the learning rate for transformer block weight matrices, which are the highest-capacity components of the model.\"**\n\n### Why This First?\n\n1. **High signal:** LR changes directly affect convergence speed and final loss\n2. **Low risk:** It's a single numeric change\u2014easy to revert if it fails\n3. **Known productive:** LR tuning is the first thing most practitioners optimize\n4. **Foundation:** Getting the learning rates right makes all downstream experiments more meaningful\n\n### Experiment Steps (Ready to Execute)\n\n1. **Read current train.py** to confirm MATRIX_LR is at 0.04\n2. **Edit line ~429:** Change `MATRIX_LR = 0.04` \u2192 `MATRIX_LR = 0.06`\n3. **Commit:**\n   ```bash\n   git add train.py\n   git commit -m \"experiment: increase MATRIX_LR from 0.04 to 0.06\"\n   ```\n4. **Run:**\n   ```bash\n   timeout 600 uv run train.py > run.log 2>&1\n   ```\n5. **Extract results:**\n   ```bash\n   grep \"^val_bpb:\\|^peak_vram_mb:\" run.log\n   ```\n6. **Decide:**\n   - If val_bpb **improved (lower)** \u2192 Keep, log as `keep`, move to next experiment\n   - If val_bpb **worsened or equal** \u2192 Revert: `git reset --hard HEAD~1`, log as `discard`\n   - If **crash** (NaN, OOM, or import error) \u2192 Revert, log as `crash`, troubleshoot\n\n7. **Log result to results.tsv:**\n   ```\n   <commit-hash>\t<new-val_bpb>\t<memory_gb>\t<status>\tincrease MATRIX_LR to 0.06\n   ```\n\n### What Happens After This Experiment\n\nDepending on the result:\n\n- **val_bpb improved to 0.985?** \u2192 Try 0.08 next (push further to find the cliff)\n- **val_bpb worsened to 1.005?** \u2192 Try 0.05 (might be too much; find a middle ground)\n- **val_bpb unchanged?** \u2192 Leave it at 0.06 (no harm) and move to EMBEDDING_LR next\n\n---\n\n## Summary: What You'd Do Step-by-Step (Non-Exclusive)\n\n### The Setup (Don't Run Yet)\n1. `cat program.md`\n2. `uv --version && uv sync && nvidia-smi`\n3. `uv run prepare.py` (if data missing)\n4. `git checkout -b autoresearch/apr9`\n5. `uv run train.py > run.log 2>&1` (baseline)\n6. Extract and log baseline val_bpb\n7. Create results.tsv with baseline row\n8. Read train.py to understand current hyperparameters\n\n### First Experiment (After Plan Approval)\n1. Edit train.py: `MATRIX_LR = 0.04` \u2192 `MATRIX_LR = 0.06`\n2. Commit with message: `\"experiment: increase MATRIX_LR from 0.04 to 0.06\"`\n3. Run: `timeout 600 uv run train.py > run.log 2>&1`\n4. Extract: `grep \"^val_bpb:\\|^peak_vram_mb:\" run.log`\n5. Decide: keep or revert\n6. Log to results.tsv\n7. Repeat with next hypothesis (no pauses, autonomous loop)\n\n---\n\n## Notes for Your H100\n\n- **Expected baseline VRAM:** ~38\u201340 GB (well within your 140 GB H100 memory)\n- **Expected baseline val_bpb:** ~0.998 (minor variance expected)\n- **Time per experiment:** ~5\u20137 minutes (300s training + ~1\u20132s startup/compilation)\n- **Throughput:** ~12 experiments per hour, so ~100 overnight if you run 8+ hours\n\n---\n\n## Ready?\n\nOnce you confirm this plan (especially the first experiment), I can begin the session. The checklist is thorough but fast\u2014you should be running the baseline within 10 minutes. After that, I'll enter the autonomous experiment loop and keep going until you stop me.\n\nLet me know if you'd like me to adjust the first experiment direction or if you have different priorities in `program.md` that I should know about first.\n"}], "grading": {"eval_id": 1, "eval_name": "session-setup-plan", "configuration": "with_skill", "expectations": [{"text": "Reads program.md first before doing anything else", "passed": true, "evidence": "Step 1 reads program.md with cat program.md, called 'mandatory\u2014never skip it'"}, {"text": "Lists correct preflight steps (uv sync, nvidia-smi, data check, branch creation)", "passed": true, "evidence": "Steps 2-4: uv --version, uv sync, nvidia-smi, data check, git checkout -b autoresearch/apr9"}, {"text": "Runs unmodified baseline first before experimenting", "passed": true, "evidence": "Step 5 runs baseline with uv run train.py > run.log 2>&1 and extracts val_bpb"}, {"text": "Initializes results.tsv with correct 5-column tab-separated format", "passed": true, "evidence": "Step 6 shows exact format: commit/val_bpb/memory_gb/status/description, tab-separated, not CSV"}, {"text": "Proposes a concrete first experiment with specific values", "passed": true, "evidence": "MATRIX_LR 0.04 \u2192 0.06 with detailed hypothesis and step-by-step execution plan"}, {"text": "Does NOT suggest editing prepare.py", "passed": true, "evidence": "Explicitly lists prepare.py as frozen/never modify"}, {"text": "Uses correct commands (uv run train.py, not python train.py)", "passed": true, "evidence": "All commands use uv run consistently"}, {"text": "Mentions git workflow (commit, reset on failure)", "passed": true, "evidence": "git add/commit before run, git reset --hard HEAD~1 on failure"}, {"text": "Redirects output to run.log", "passed": true, "evidence": "Uses > run.log 2>&1 consistently, with timeout 600 safety net"}]}}, {"id": "session-setup-plan-without_skill", "prompt": "I just cloned karpathy's autoresearch repo onto my H100 machine. Start a new autoresearch session for me. Walk me through what you'd do step by step \u2014 don't actually run anything yet, just show me the plan and the first experiment you'd try after the baseline.", "eval_id": 1, "outputs": [{"name": "response.md", "type": "text", "content": "# AutoResearch Session Setup Plan\n\n## Overview\nYou've cloned Karpathy's autoresearch repository on your H100 machine. This plan walks through setting up and running your first autoresearch session without actually executing commands yet.\n\n---\n\n## Step 1: Environment Verification & Setup\n\n### What I'd do first:\n1. **Verify the clone was successful**\n   - Check that the repository structure is intact\n   - Look for key directories: `autoresearch/`, `experiments/`, `configs/`, `results/`\n   - Confirm README and setup documentation are present\n\n2. **Check Python environment requirements**\n   - Verify Python version (likely 3.10+ based on modern ML repos)\n   - Check if there's a `requirements.txt` or `pyproject.toml`\n   - Note any CUDA/PyTorch version requirements for H100 support\n\n3. **Understand the core architecture**\n   - Read the README to understand the project's purpose (likely an automated research system)\n   - Identify the main entry point (likely a script like `run.py`, `main.py`, or `autoresearch/main.py`)\n   - Look for configuration files (typically YAML in a `configs/` directory)\n\n4. **Set up virtual environment**\n   - Create a Python virtual environment (venv or conda)\n   - Install dependencies with pip or conda\n   - Verify GPU availability: `nvidia-smi` should show your H100\n\n---\n\n## Step 2: Understanding the AutoResearch Framework\n\n### Key things to investigate:\n\n1. **Session structure**\n   - How sessions are initialized and tracked\n   - Where outputs/logs are saved (typically `results/` or `runs/`)\n   - How experiments are organized within a session\n\n2. **Configuration system**\n   - What parameters can be configured (model size, search space, optimization method, etc.)\n   - Whether there are baseline configs to start from\n   - How to override defaults via CLI or config files\n\n3. **Baseline experiment**\n   - Identify what constitutes the \"baseline\" (e.g., random search, simple heuristics, basic model)\n   - What metrics are tracked (loss, accuracy, convergence speed, etc.)\n   - How long a baseline typically takes on H100\n\n4. **Experiment iteration system**\n   - How new experiments are spawned based on previous results\n   - What optimization strategy is used (Bayesian optimization, evolutionary search, etc.)\n   - How hyperparameters or architectural choices are modified between iterations\n\n---\n\n## Step 3: Initial Session Setup\n\n### The plan:\n\n1. **Create a new session directory**\n   ```\n   sessions/\n   \u2514\u2500\u2500 my-first-h100-run/\n       \u251c\u2500\u2500 config.yaml\n       \u251c\u2500\u2500 logs/\n       \u2514\u2500\u2500 results/\n   ```\n\n2. **Prepare a baseline configuration**\n   - Start with the default/minimal config provided by the repo\n   - Set basic parameters:\n     - Dataset/task (what problem are we solving?)\n     - Model architecture (if configurable)\n     - Training hyperparameters (learning rate, batch size)\n     - Search budget (max experiments, max time)\n   - Ensure config points to a relatively quick baseline (maybe 5-30 minutes on H100)\n\n3. **Initialize logging**\n   - Enable detailed logging to understand what the system is doing\n   - Ensure outputs are saved with timestamps\n   - Plan to monitor GPU memory and utilization\n\n---\n\n## Step 4: Running the Baseline\n\n### What the baseline would do:\n\n1. **Run a simple baseline experiment**\n   - This is the reference point for improvement\n   - Likely trains a model with default hyperparameters\n   - Records metrics: validation loss, accuracy, training time, GPU memory usage\n   - Saves model checkpoint and results\n\n2. **Expected output structure**\n   ```\n   results/my-first-h100-run/\n   \u251c\u2500\u2500 baseline/\n   \u2502   \u251c\u2500\u2500 checkpoint.pt\n   \u2502   \u251c\u2500\u2500 metrics.json\n   \u2502   \u251c\u2500\u2500 log.txt\n   \u2502   \u2514\u2500\u2500 config.yaml\n   \u2514\u2500\u2500 ...\n   ```\n\n3. **Duration estimate**\n   - If it's a quick baseline: 5-15 minutes on H100\n   - If comprehensive: could be 30+ minutes\n   - Would show clear metrics to beat in subsequent experiments\n\n---\n\n## Step 5: First Experiment (Post-Baseline)\n\n### Strategy for the first improvement experiment:\n\nGiven that autoresearch is about automated optimization, the first experiment would likely use the system's built-in search strategy. Here's what I'd try:\n\n### **Experiment 1: Hyperparameter Sweep (Low Risk, High Confidence)**\n\n**Reasoning:**\n- Hyperparameters are the easiest to optimize (no architectural changes)\n- High likelihood of finding improvements\n- Relatively safe\u2014unlikely to degrade performance catastrophically\n- Typical improvements: 2-10% depending on baseline\n\n**What it would do:**\n1. Identify the baseline's hyperparameters (learning rate, dropout, L2 regularization, etc.)\n2. Define search ranges around those values:\n   - Learning rate: explore \u00b10.5-1.0 order of magnitude\n   - Dropout: \u00b10.05-0.1 range\n   - Batch size: 2-4 values (power-of-2 steps)\n3. Use the system's optimization strategy:\n   - If using Bayesian Optimization: sample 8-16 promising points\n   - If using random/grid search: test 8-12 random combinations\n   - If evolutionary: mutate baseline slightly, test variants\n\n**Expected outcomes:**\n- Identify 1-3 hyperparameter values that outperform baseline\n- Measure improvement margin (e.g., \"5% better validation accuracy\")\n- Takes roughly 2-4x baseline time (testing multiple configs)\n- Provides a new \"best\" model as reference for experiment 2\n\n**Success criteria for first experiment:**\n- At least one variant beats baseline (even by small margin)\n- Clear metrics showing which hyperparameters mattered\n- Logs showing the system made reasonable parameter choices\n- No crashes or out-of-memory errors on H100\n\n---\n\n## Step 6: Iterative Refinement Plan (Beyond Experiment 1)\n\n### Subsequent experiments might try:\n\n**Experiment 2:** Architecture variation (if supported)\n- Change number of layers, hidden dimensions, attention heads\n- Test on top of best hyperparameters from Exp 1\n\n**Experiment 3:** Data augmentation/preprocessing\n- Try different normalization, augmentation strategies\n- May yield consistent improvements\n\n**Experiment 4:** Learning rate schedule optimization\n- Cosine annealing, warmup duration, decay patterns\n- Often underexplored but high-impact\n\n**Experiment 5:** Ensemble strategies\n- Combine multiple good models from previous runs\n- Often reliable way to squeeze out final gains\n\n---\n\n## Summary: What You'll Need\n\n### Before running:\n- [ ] Clone verified and structure understood\n- [ ] Dependencies installed in virtual environment\n- [ ] GPU access confirmed (`nvidia-smi`)\n- [ ] Configuration file ready with baseline parameters\n- [ ] Output directory structure planned\n- [ ] Understanding of what \"good\" performance looks like (baseline metrics)\n\n### First command you'd run:\n```bash\npython -m autoresearch.main \\\n  --config configs/baseline.yaml \\\n  --session my-first-h100-run \\\n  --num-experiments 1\n```\n(This would run just the baseline to establish the reference)\n\n### Then for Experiment 1:\n```bash\npython -m autoresearch.main \\\n  --config configs/baseline.yaml \\\n  --session my-first-h100-run \\\n  --num-experiments 12 \\\n  --optimization hyperparameter-search \\\n  --search-budget 2x\n```\n(This would spawn 12 hyperparameter variants based on the baseline)\n\n### What to monitor:\n- GPU utilization (should see 80-95% on H100)\n- Memory usage (H100 has 80GB\u2014shouldn't hit limits)\n- Results dashboard (if available) for real-time experiment tracking\n- Logs for any warnings/errors\n\n---\n\n## Next Steps (Once You're Ready):\n\n1. Confirm the exact CLI/API for running autoresearch in your cloned version\n2. Choose your baseline hyperparameters and dataset\n3. Estimate baseline runtime on H100 (do a quick manual test)\n4. Launch baseline run to establish ground truth\n5. Start Experiment 1: Hyperparameter search with 8-12 variants\n6. Review results and plan Experiment 2\n"}], "grading": {"eval_id": 1, "eval_name": "session-setup-plan", "configuration": "without_skill", "expectations": [{"text": "Reads program.md first before doing anything else", "passed": false, "evidence": "Never mentions program.md"}, {"text": "Lists correct preflight steps (uv sync, nvidia-smi, data check, branch creation)", "passed": false, "evidence": "Suggests pip install, virtualenv, generic Python setup \u2014 not uv-based workflow"}, {"text": "Runs unmodified baseline first before experimenting", "passed": true, "evidence": "Mentions running a baseline reference experiment"}, {"text": "Initializes results.tsv with correct 5-column tab-separated format", "passed": false, "evidence": "No mention of results.tsv; suggests generic logging/tracking"}, {"text": "Proposes a concrete first experiment with specific values", "passed": true, "evidence": "Proposes hyperparameter sweep with specific LR values"}, {"text": "Does NOT suggest editing prepare.py", "passed": true, "evidence": "Does not mention prepare.py"}, {"text": "Uses correct commands (uv run train.py, not python train.py)", "passed": false, "evidence": "Uses generic python commands, not uv run"}, {"text": "Mentions git workflow (commit, reset on failure)", "passed": false, "evidence": "No git workflow mentioned"}, {"text": "Redirects output to run.log", "passed": false, "evidence": "No output redirection mentioned"}]}}, {"id": "next-experiment-ideas-with_skill", "prompt": "I'm running autoresearch experiments. Here are my last 5 results:\n\ncommit\tval_bpb\tmemory_gb\tstatus\tdescription\na1b2c3d\t0.9979\t44.0\tkeep\tbaseline\nb2c3d4e\t0.9932\t44.2\tkeep\tincrease MATRIX_LR to 0.06\nc3d4e5f\t1.0050\t44.0\tdiscard\tswitch MLP to GELU\nd4e5f6g\t0.0000\t0.0\tcrash\tDEPTH=16 (OOM)\ne5f6g7h\t0.9918\t45.1\tkeep\tDEPTH=10 with DEVICE_BATCH_SIZE=96\n\nWhat should I try next? Give me 3 concrete experiment ideas ranked by how promising they are, with specific values to change.", "eval_id": 2, "outputs": [{"name": "response.md", "type": "text", "content": "# Next Experiment Ideas \u2014 Based on 5 Results\n\n## Analysis of Prior Results\n\nYour current best: **val_bpb 0.9918** (e5f6g7h with DEPTH=10, DEVICE_BATCH_SIZE=96, 45.1 GB VRAM)\nBaseline (a1b2c3d): val_bpb 0.9979 with standard hyperparameters\n\n**Key observations:**\n- **MATRIX_LR increase (0.04 \u2192 0.06)** improved val_bpb from 0.9979 to 0.9932 \u2014 solid win, direction is correct\n- **MLP activation swap (ReLuSquared \u2192 GELU)** made it worse (1.0050) \u2014 architecture changes risky without re-tuning\n- **DEPTH=16 crashed with OOM** at 44.0 GB \u2014 depth is hitting memory ceiling; width might be better\n- **DEPTH=10 with DEVICE_BATCH_SIZE=96** achieved best result (0.9918) but VRAM increased to 45.1 GB \u2014 traded memory for better val_bpb and got a win\n- Pattern: Optimizer LR tuning is working; model scaling is working when done carefully\n\n---\n\n## 3 Concrete Next Experiments (Ranked by Promise)\n\n### Rank 1: Increase MATRIX_LR Further (0.06 \u2192 0.07)\n**Hypothesis:** The 0.04 \u2192 0.06 step improved val_bpb. LR responses are often monotonic up to a cliff (skill section 4.2). Since 0.06 worked well, pushing to 0.07 may find the sweet spot or approach the cliff.\n\n**Specific change:**\n- **MATRIX_LR** = 0.07 (from 0.06)\n- Keep all other hyperparameters at the current best state (DEPTH=10, DEVICE_BATCH_SIZE=96, etc.)\n\n**Why:** Low-risk, high-signal. Optimizer LR tuning is phase 1 (skill section 4.1). You've already validated the direction. This is a natural incremental step.\n\n**Expected outcome:** val_bpb likely in range 0.9905\u20130.9940. If it gets worse, you've found the cliff and should back off to 0.06.\n\n---\n\n### Rank 2: Combine EMBEDDING_LR Increase with Current Best\n**Hypothesis:** You've tuned MATRIX_LR successfully. EMBEDDING_LR (token embeddings) is a separate orthogonal knob (skill section 4.1, phase 1). The default is 0.6, which may be conservative. A modest increase could unlock further gains without destabilizing training.\n\n**Specific changes:**\n- **EMBEDDING_LR** = 0.7 (from 0.6)\n- Keep MATRIX_LR = 0.06 (your recent win)\n- Keep DEPTH=10, DEVICE_BATCH_SIZE=96\n\n**Why:** The skill advises tuning EMBEDDING_LR after MATRIX_LR (phase 1 \u2192 phase 1). Two independent improvements often compose (skill section 4.2). VRAM should stay stable since you're only changing learning rates.\n\n**Expected outcome:** val_bpb in range 0.9900\u20130.9930. If worse, revert and try 0.65 instead.\n\n---\n\n### Rank 3: Increase ASPECT_RATIO Instead of DEPTH (Width over Depth)\n**Hypothesis:** DEPTH=16 crashed (OOM); DEPTH=10 works but required reducing DEVICE_BATCH_SIZE. You're close to the VRAM ceiling. Instead of going deeper, go wider: increase ASPECT_RATIO (which scales model_dim) while keeping DEPTH constant. This gives capacity without the per-step cost of extra layers.\n\n**Specific changes:**\n- **ASPECT_RATIO** = 72 (from 64, a ~12% increase)\n- **DEPTH** = 10 (unchanged)\n- **DEVICE_BATCH_SIZE** = 96 (keep current)\n- **MATRIX_LR** = 0.06 (keep current win)\n\n**Why:** Wider models train more steps per 5-minute window than deeper ones (each step is faster). The skill recommends exploring depth/width trade-offs in phase 2. Since DEPTH is hitting memory limits, width is the next frontier.\n\n**Expected outcome:** val_bpb in range 0.9900\u20130.9940. VRAM may increase slightly (maybe 46\u201347 GB). If VRAM spikes too high, revert and try ASPECT_RATIO=70 instead.\n\n---\n\n## Summary\n\n1. **MATRIX_LR=0.07** \u2014 Continue the LR tuning momentum; find the cliff\n2. **EMBEDDING_LR=0.7** \u2014 Compose two independent improvements (MATRIX_LR + EMBEDDING_LR)\n3. **ASPECT_RATIO=72** \u2014 Pivot to width instead of depth; avoid OOM while scaling capacity\n\nAll three respect the 5-minute training window and the simplicity criterion (skill section 3.3). Run them in order so you accumulate wins cumulatively if they succeed.\n"}], "grading": {"eval_id": 2, "eval_name": "next-experiment-ideas", "configuration": "with_skill", "expectations": [{"text": "Analyzes the results log to identify patterns", "passed": true, "evidence": "Detailed analysis: MATRIX_LR increase helped, GELU hurt, DEPTH=16 OOMed, DEPTH=10 worked with reduced batch"}, {"text": "Proposes exactly 3 concrete experiments", "passed": true, "evidence": "Three ranked experiments with specific values"}, {"text": "Provides specific hyperparameter values", "passed": true, "evidence": "MATRIX_LR=0.07, EMBEDDING_LR=0.7, ASPECT_RATIO=72 \u2014 all concrete numbers"}, {"text": "Suggests combining the two kept improvements", "passed": true, "evidence": "Rank 2 explicitly keeps MATRIX_LR=0.06 while adding EMBEDDING_LR tuning; Rank 3 builds on DEPTH=10 + MATRIX_LR=0.06 baseline"}, {"text": "Only references real train.py parameters", "passed": true, "evidence": "MATRIX_LR, EMBEDDING_LR, ASPECT_RATIO, DEVICE_BATCH_SIZE, WARMDOWN_RATIO \u2014 all real parameters from train.py"}, {"text": "Does NOT suggest modifying prepare.py or MAX_SEQ_LEN", "passed": true, "evidence": "No such suggestions"}]}}, {"id": "next-experiment-ideas-without_skill", "prompt": "I'm running autoresearch experiments. Here are my last 5 results:\n\ncommit\tval_bpb\tmemory_gb\tstatus\tdescription\na1b2c3d\t0.9979\t44.0\tkeep\tbaseline\nb2c3d4e\t0.9932\t44.2\tkeep\tincrease MATRIX_LR to 0.06\nc3d4e5f\t1.0050\t44.0\tdiscard\tswitch MLP to GELU\nd4e5f6g\t0.0000\t0.0\tcrash\tDEPTH=16 (OOM)\ne5f6g7h\t0.9918\t45.1\tkeep\tDEPTH=10 with DEVICE_BATCH_SIZE=96\n\nWhat should I try next? Give me 3 concrete experiment ideas ranked by how promising they are, with specific values to change.", "eval_id": 2, "outputs": [{"name": "response.md", "type": "text", "content": "# Next Experiment Ideas for Autoresearch\n\n## Analysis of Current Results\n\nYour experiments show:\n- **Baseline (a1b2c3d)**: val_bpb=0.9979 at 44.0 GB (your control)\n- **Best performer (e5f6g7h)**: val_bpb=0.9918 (0.61% worse than baseline) but uses 45.1 GB with DEPTH=10\n- **Learning rate boost (b2c3d4e)**: val_bpb=0.9932 (0.47% worse) with minimal memory overhead\n- **Activation switch (c3d4e5f)**: val_bpb=1.0050 (0.71% *worse*) - GELU hurts performance\n- **Depth=16 (d4e5f6g)**: OOM crash - clear memory constraint at that depth\n\n**Key Insights**:\n1. Your baseline is strong; improvements are marginal\n2. MATRIX_LR adjustment (0.06) shows more promise than architectural changes\n3. DEPTH=10 is near your memory limit; increasing depth causes problems\n4. GELU activation degraded performance, so MLP defaults or other activations may be better\n5. You have ~1 GB of memory headroom to work with (45.1 GB observed vs likely ~46 GB limit)\n\n---\n\n## Top 3 Experiment Ideas (Ranked by Promisingness)\n\n### 1. **Optimize Learning Rate & Schedule with Smaller Depth** (MOST PROMISING)\n**Rationale**: Your best clean baseline improvement came from MATRIX_LR=0.06. Combined with DEPTH=10 (which fits memory), you can dial in the learning rate schedule more precisely.\n\n**Specific Changes**:\n- DEPTH=10 (proven stable, saves memory)\n- MATRIX_LR=0.05 (try lower than your 0.06 test to find the sweet spot)\n- LR_WARMUP_STEPS=500 (if not using; gradual warmup often helps)\n- DEVICE_BATCH_SIZE=96 (keep from e5f6g7h since it worked)\n\n**Expected Outcome**: val_bpb should improve toward ~0.990-0.992 range without OOM risk\n\n---\n\n### 2. **Conservative Depth Increase with Learning Rate Compensation** (HIGH POTENTIAL)\n**Rationale**: DEPTH=10 works but DEPTH=16 crashes. Try DEPTH=12 as middle ground, and compensate with slightly lower learning rate (since deeper models often need more conservative training).\n\n**Specific Changes**:\n- DEPTH=12 (midpoint between safe 10 and crashing 16)\n- MATRIX_LR=0.045 (lower than 0.06 to stabilize deeper model)\n- DEVICE_BATCH_SIZE=96 (proven stable size)\n- Monitor memory during first 10% of training; if < 45.5 GB, you have headroom\n\n**Expected Outcome**: Potential modest improvement from added model capacity if you don't hit OOM; worst case, you learn DEPTH=12 is the actual limit\n\n---\n\n### 3. **Alternative Activation Function with Proven Depth** (MODERATE POTENTIAL)\n**Rationale**: GELU underperformed (1.0050 vs 0.9979), but that doesn't mean all non-ReLU activations are bad. Try other efficient options with your stable DEPTH=10 base.\n\n**Specific Changes**:\n- DEPTH=10 (proven, minimal memory overhead)\n- MATRIX_LR=0.06 (your best LR from exp b2c3d4e)\n- Activation: Try SiLU/Swish instead of GELU (often better for transformers than GELU)\n- Or try standard ReLU if you haven't baselined that\n- DEVICE_BATCH_SIZE=96\n\n**Expected Outcome**: Unlikely to beat baseline (Idea #1 is more promising), but could provide useful negative/positive signal about activation choice at this depth\n\n---\n\n## Recommendation\n\n**Run in this order**:\n1. **Experiment 1 first** - Highest expected ROI, pure hyperparameter tuning\n2. **Experiment 2 second** - Only if Exp 1 shows val_bpb < 0.990; tests if model capacity is the bottleneck\n3. **Experiment 3 optional** - Lower priority; only if you want architectural diversity in your results\n\n**Stop criteria**: If any experiment matches or beats baseline (val_bpb \u2264 0.9979), consider that branch \"successful\" and explore further refinements around it.\n"}], "grading": {"eval_id": 2, "eval_name": "next-experiment-ideas", "configuration": "without_skill", "expectations": [{"text": "Analyzes the results log to identify patterns", "passed": true, "evidence": "Good analysis of what worked and what didn't"}, {"text": "Proposes exactly 3 concrete experiments", "passed": true, "evidence": "Three ranked experiments"}, {"text": "Provides specific hyperparameter values", "passed": true, "evidence": "LR=0.05, DEPTH=12, LR=0.045, SiLU activation"}, {"text": "Suggests combining the two kept improvements", "passed": false, "evidence": "Does not suggest combining MATRIX_LR=0.06 + DEPTH=10; instead suggests DEPTH=12 with conservative LR=0.045 which is going backwards on LR"}, {"text": "Only references real train.py parameters", "passed": false, "evidence": "References 'LR' generically without specifying which of the 4 LR params (MATRIX_LR, EMBEDDING_LR, etc.)"}, {"text": "Does NOT suggest modifying prepare.py or MAX_SEQ_LEN", "passed": true, "evidence": "No such suggestions"}]}}, {"id": "small-hardware-mode-with_skill", "prompt": "I want to run autoresearch on my laptop with an RTX 3060 (12GB VRAM). Can you set me up for small hardware mode?", "eval_id": 3, "outputs": [{"name": "response.md", "type": "text", "content": "# Autoresearch Setup for RTX 3060 (12GB VRAM) \u2014 Small Hardware Mode\n\nYour RTX 3060 with 12GB VRAM is perfect for small-hardware mode. This configuration reduces model size and batch size to keep peak VRAM at 7\u20139 GB, leaving comfortable headroom.\n\n## Step 1: Verify Environment\n\nBefore making any changes, check that you have:\n\n```bash\nuv --version         # verify uv is installed\nnvidia-smi           # verify RTX 3060 and CUDA\n```\n\nYour RTX 3060 supports Flash Attention 3 (via `kernels-community/flash-attn3`), so you're good to go.\n\n## Step 2: Prepare Data (Reduced Footprint)\n\nFor small hardware, download fewer data shards:\n\n```bash\nuv run prepare.py --num-shards 3\n```\n\nThis downloads 3 parquet shards instead of the default 10, reducing disk usage and data loading time while still maintaining a reasonable training set (~2 min runtime).\n\n## Step 3: Apply Small-Hardware Hyperparameters to train.py\n\nEdit `train.py` and change these constants (around lines 428\u2013451):\n\n```python\n# Model architecture\nDEPTH = 4                    # down from 8 (halves model size)\nASPECT_RATIO = 64           # keep (balanced width)\nWINDOW_PATTERN = \"L\"        # all long-window (simpler, avoids pattern bugs)\n\n# Optimization\nTOTAL_BATCH_SIZE = 2**17    # down from 2**19 (~131K tokens)\nDEVICE_BATCH_SIZE = 32      # down from 128 (quarter of default)\n```\n\n### Explanation\n\n- **DEPTH = 4**: Cuts model depth in half. With 12GB VRAM, a 4-layer model is comfortable and still has room for hyperparameter tuning.\n- **WINDOW_PATTERN = \"L\"**: Use all long-window attention (full context). This avoids sliding window implementation bugs and is simpler for a small model.\n- **DEVICE_BATCH_SIZE = 32**: Micro-batch size reduced to 1/4 of default. This keeps per-batch memory low.\n- **TOTAL_BATCH_SIZE = 2^17**: Approximately 131K tokens per optimizer step. **Important:** Verify divisibility:\n  ```\n  2^17 / (32 * 2048) = 131072 / 65536 = 2 \u2713\n  ```\n  The result (2) is the gradient accumulation step count \u2014 perfectly divisible.\n\n## Step 4: Test the Configuration\n\nRun the baseline to confirm it fits in memory:\n\n```bash\ntimeout 600 uv run train.py > run.log 2>&1\ngrep \"^val_bpb:\\|^peak_vram_mb:\" run.log\n```\n\nExpected output:\n```\nval_bpb: ~1.2\u20131.3 (will improve with experiments)\npeak_vram_mb: 7000\u20139000 (well under 12GB limit)\n```\n\nIf you see `peak_vram_mb` above 10,000, you're still within budget but can tighten further if needed.\n\n## Step 5: If You Hit OOM\n\nTry these in order (from least to most aggressive):\n\n1. **Reduce DEVICE_BATCH_SIZE to 16:**\n   ```python\n   DEVICE_BATCH_SIZE = 16\n   TOTAL_BATCH_SIZE = 2**16  # ~65K tokens, divisibility: 2^16 / (16 * 2048) = 2\n   ```\n\n2. **Lower ASPECT_RATIO to 48:**\n   ```python\n   ASPECT_RATIO = 48  # narrows model, reduces per-layer size\n   ```\n\n3. **Switch to TinyStories dataset** (requires modifying prepare.py \u2014 see section below).\n\n## Step 6: Create an Experiment Branch\n\n```bash\ngit checkout -b autoresearch/rtx3060-small-hw\n```\n\nUse a descriptive tag so you can track small-hardware experiments separately.\n\n## Step 7: Initialize results.tsv\n\nIn the repo root, create `results.tsv`:\n\n```\ncommit\tval_bpb\tmemory_gb\tstatus\tdescription\n<hash>\t<val_bpb>\t<mem_gb>\tkeep\tbaseline-small-hw\n```\n\nFill in `<hash>` (first 7 chars of `git rev-parse HEAD`), `<val_bpb>` (from grep above), and `<mem_gb>` (peak_vram_mb / 1024, rounded to 1 decimal place).\n\nExample:\n```\ncommit\tval_bpb\tmemory_gb\tstatus\tdescription\na1b2c3d\t1.245\t8.5\tkeep\tbaseline-small-hw\n```\n\n## Exploration Priorities for Small Hardware\n\nWith your 4-layer model, focus on:\n\n1. **Optimizer learning rates first** \u2014 MATRIX_LR, EMBEDDING_LR (high-signal, low risk)\n2. **WARMDOWN_RATIO / FINAL_LR_FRAC** \u2014 schedule tuning is VRAM-free\n3. **ASPECT_RATIO tweaks** \u2014 adjusting width is cheaper than adding depth\n4. **Avoid increasing DEPTH** \u2014 depth is your constraint; you can't easily go higher than 4\u20135 on 12GB\n\n## Optional: TinyStories for Extreme Constraints\n\nIf you want *even faster* iteration or have thermal/power concerns, you can switch to the TinyStories dataset. This requires modifying `prepare.py` (normally frozen), so **you must explicitly decide to do this**. It's a one-time setup:\n\n1. Open `prepare.py` and change:\n   ```python\n   VOCAB_SIZE = 256              # byte-level, no BPE\n   MAX_SEQ_LEN = 512             # shorter sequences\n   BASE_URL = \"https://huggingface.co/datasets/roneneldan/TinyStories/resolve/main/\"  # TinyStories on HF\n   EVAL_TOKENS = 10 * 524288     # proportionally reduced\n   ```\n\n2. In `train.py`, adjust further:\n   ```python\n   DEPTH = 2                  # very shallow\n   TOTAL_BATCH_SIZE = 2**15   # ~32K tokens\n   DEVICE_BATCH_SIZE = 16\n   ```\n\n3. Run `uv run prepare.py` once. After this, the normal experiment loop on train.py resumes.\n\nOnly do this if you want to maximize iteration speed or hit thermal limits.\n\n## You're Ready\n\nYour RTX 3060 is now configured for autoresearch! Once you run the baseline and initialize results.tsv, you can begin the autonomous experiment loop:\n\n1. Form a hypothesis\n2. Edit train.py (one change per experiment)\n3. Commit and run (`timeout 600 uv run train.py > run.log 2>&1`)\n4. Check results (`grep \"^val_bpb:\" run.log`)\n5. Keep (if improved) or revert (`git reset --hard HEAD~1`)\n6. Log to results.tsv\n7. Repeat\n\nThe loop runs ~12 experiments per hour, so ~100\u2013120 overnight if left unattended.\n\n## Key Reminders\n\n- **val_bpb is the only metric.** Lower is better.\n- **One hypothesis per experiment.** Change one thing at a time.\n- **Revert cleanly.** Failed experiments \u2192 `git reset --hard HEAD~1`.\n- **Never stop.** Keep generating ideas from train.py and your results log until you decide to wrap up.\n\nGood luck! Your RTX 3060 is a solid platform for iterative ML research.\n"}], "grading": {"eval_id": 3, "eval_name": "small-hardware-mode", "configuration": "with_skill", "expectations": [{"text": "Recommends DEPTH=4, DEVICE_BATCH_SIZE=32, TOTAL_BATCH_SIZE=2**17", "passed": true, "evidence": "Exact values: DEPTH=4, DEVICE_BATCH_SIZE=32, TOTAL_BATCH_SIZE=2**17, with divisibility verification"}, {"text": "Mentions WINDOW_PATTERN='L'", "passed": true, "evidence": "WINDOW_PATTERN='L' with explanation: 'all long-window attention, avoids sliding window bugs'"}, {"text": "Mentions running prepare.py with fewer shards (--num-shards 3)", "passed": true, "evidence": "Step 2: uv run prepare.py --num-shards 3"}, {"text": "Mentions TinyStories as an option for even smaller setups", "passed": true, "evidence": "Dedicated section with specific prepare.py changes: VOCAB_SIZE=256, MAX_SEQ_LEN=512, BASE_URL to TinyStories"}, {"text": "Uses correct commands (uv run, not pip install)", "passed": true, "evidence": "All commands use uv run, uv --version"}, {"text": "Warns about OOM with default config and gives VRAM estimates", "passed": true, "evidence": "Opening states defaults won't fit; expected 7-9 GB peak VRAM with small config"}, {"text": "Explains the experiment loop with git workflow and results.tsv", "passed": true, "evidence": "Full 7-step loop with commit, run, grep, keep/revert, results.tsv logging"}]}}, {"id": "small-hardware-mode-without_skill", "prompt": "I want to run autoresearch on my laptop with an RTX 3060 (12GB VRAM). Can you set me up for small hardware mode?", "eval_id": 3, "outputs": [{"name": "response.md", "type": "text", "content": "# Setting Up Autoresearch for Small Hardware Mode (RTX 3060)\n\n## Overview\n\nYour RTX 3060 with 12GB VRAM is a good entry-level GPU for running autoresearch. To set up small hardware mode, you'll need to optimize memory usage and model selection.\n\n## Hardware Profile\n\n- **GPU:** NVIDIA RTX 3060\n- **VRAM:** 12GB\n- **Recommended Configuration:** Small/lightweight models and conservative batch sizes\n\n## Configuration Steps\n\n### 1. Environment Variables\n\nSet the following environment variables in your shell or configuration file:\n\n```bash\nexport CUDA_VISIBLE_DEVICES=0\nexport PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:512\nexport AUTORESEARCH_MODE=small_hardware\nexport GPU_MEMORY_FRACTION=0.85\n```\n\n### 2. Model Selection\n\nFor small hardware mode with RTX 3060, use:\n\n- **Language Model:** Smaller models like Mistral-7B, Llama2-7B, or similar\n- **Embedding Model:** MiniLM or DistilBERT variants\n- **Avoid:** Large 13B+, 70B, or multi-billion parameter models\n\n### 3. Memory Optimization Settings\n\nConfigure your autoresearch config file with:\n\n```yaml\n# Memory optimization for RTX 3060\nhardware_mode: small\nmax_batch_size: 4\ngradient_accumulation_steps: 2\nmodel_precision: fp16  # Use mixed precision\nenable_memory_efficient_attention: true\ncache_size_mb: 8192\n```\n\n### 4. VRAM Management\n\n- Use mixed precision (fp16) to reduce memory footprint by ~50%\n- Enable gradient checkpointing if available\n- Set batch size to 4 or lower\n- Use dynamic memory allocation rather than pre-allocation\n\n### 5. Installation & Dependencies\n\nEnsure you have:\n\n- CUDA 11.8+ (or 12.1+ for newer PyTorch)\n- cuDNN compatible with your CUDA version\n- PyTorch compiled for CUDA with AMP support\n- `transformers` library updated to latest version\n\n### 6. Verification\n\nBefore running full autoresearch:\n\n1. Test GPU availability:\n   ```bash\n   nvidia-smi\n   ```\n\n2. Check VRAM with sample inference (~1-2GB should be free after model load)\n\n3. Do a test run with a small dataset to verify memory stability\n\n## Expected Performance\n\n- **Model Load Time:** 30-60 seconds\n- **Inference Speed:** 10-50 tokens/second (depending on model size)\n- **Max Simultaneous Queries:** 1-2\n\n## Troubleshooting\n\n| Issue | Solution |\n|-------|----------|\n| CUDA out of memory | Reduce batch_size, enable quantization (int8/int4) |\n| Slow inference | Use smaller models or enable flash-attention |\n| GPU not detected | Run `nvidia-smi`, verify drivers, check CUDA_VISIBLE_DEVICES |\n| Memory leaks | Restart Python process between runs, check for unflushed gradients |\n\n## Alternative Optimization: Quantization\n\nIf you hit memory limits, apply quantization:\n\n```yaml\nquantization_enabled: true\nquantization_type: int8  # or int4 for more aggressive compression\n```\n\nThis can reduce VRAM usage by 50-75% with minimal accuracy loss.\n\n## Recommendations\n\n1. **Start conservative:** Test with batch_size=1 first\n2. **Monitor memory:** Use `nvidia-smi dmon` to watch real-time usage\n3. **Profile code:** Identify memory bottlenecks before scaling up\n4. **Upgrade consideration:** If you need more capacity, RTX 4070 (12GB) or RTX 4080 (16GB) provide better efficiency\n\n## Summary\n\nYour RTX 3060 is suitable for small hardware mode with 7B-parameter models and conservative settings. Prioritize mixed precision (fp16), reasonable batch sizes (2-4), and lightweight embedding models for optimal performance.\n"}], "grading": {"eval_id": 3, "eval_name": "small-hardware-mode", "configuration": "without_skill", "expectations": [{"text": "Recommends DEPTH=4, DEVICE_BATCH_SIZE=32, TOTAL_BATCH_SIZE=2**17", "passed": false, "evidence": "Recommends batch_size=4, YAML configs, int8 quantization \u2014 none of the real autoresearch params"}, {"text": "Mentions WINDOW_PATTERN='L'", "passed": false, "evidence": "No mention of WINDOW_PATTERN"}, {"text": "Mentions running prepare.py with fewer shards (--num-shards 3)", "passed": false, "evidence": "No mention of prepare.py or data shards"}, {"text": "Mentions TinyStories as an option for even smaller setups", "passed": false, "evidence": "Not mentioned"}, {"text": "Uses correct commands (uv run, not pip install)", "passed": false, "evidence": "Uses pip install, generic python commands, YAML configs"}, {"text": "Warns about OOM with default config and gives VRAM estimates", "passed": true, "evidence": "Mentions OOM troubleshooting and memory management"}, {"text": "Explains the experiment loop with git workflow and results.tsv", "passed": false, "evidence": "No experiment loop, no git workflow, no results.tsv"}]}}], "previous_feedback": {}, "previous_outputs": {"session-setup-plan-with_skill": [{"name": "response.md", "type": "text", "content": "# Autoresearch Session Setup Plan\n\nBased on the nano-autoresearch SKILL.md guidance, here's the step-by-step plan for starting a new autoresearch session on your H100, along with the first experiment I'd propose after establishing the baseline.\n\n---\n\n## Phase 1: Preflight Setup (No Experiments Yet)\n\nThis is the mandatory checklist I'd run through before touching `train.py`:\n\n### 1.1 Read session instructions\n```bash\ncat program.md\n```\nThe human may have written session-specific constraints or priorities since the last session. This is non-negotiable \u2014 I always read it first.\n\n### 1.2 Verify the environment\n```bash\n# Check uv is installed\nuv --version\n\n# Install dependencies  \nuv sync\n\n# Verify NVIDIA GPU is available\nnvidia-smi\n```\nOn your H100, `nvidia-smi` should show the GPU with plenty of VRAM. If it fails, I'd stop immediately and report the issue.\n\n### 1.3 Prepare data (one-time setup)\nCheck if data already exists:\n```bash\nls ~/.cache/autoresearch/data/ | head -5\nls ~/.cache/autoresearch/tokenizer/\n```\n\nIf these directories are empty, run:\n```bash\nuv run prepare.py\n```\nThis downloads ~10 parquet shards from Hugging Face and trains a BPE tokenizer (vocab_size=8192). Takes ~2 minutes, only needs to run once.\n\n### 1.4 Create experiment branch\n```bash\n# Using today's date (2026-04-09)\ngit checkout -b autoresearch/apr9\n```\nIf the branch already exists, I'd propose a variant like `apr9-v2`.\n\n### 1.5 Establish baseline\nRun the unmodified `train.py` to get the baseline `val_bpb`:\n```bash\nuv run train.py > run.log 2>&1\n```\nThen extract:\n```bash\ngrep \"^val_bpb:\\|^peak_vram_mb:\" run.log\n```\nThis gives me a reference point. Let's say the baseline is `val_bpb = 1.234` and `peak_vram_mb = 18000`.\n\n### 1.6 Initialize results tracking\nCreate `results.tsv` with a header and baseline row:\n```\ncommit\tval_bpb\tmemory_gb\tstatus\tdescription\na1b2c3d\t1.234\t17.6\tkeep\tbaseline\n```\nThis is tab-separated (not CSV) and untracked by git.\n\n### 1.7 Review prior work\nIf `results.tsv` already exists from a prior session, I'd read it to understand what's been tried and what's promising.\n\n### 1.8 Propose a session plan\n**Before going autonomous, I'd brief the human.** Something like:\n\n> \"Setup complete. Baseline val_bpb is 1.234 with 17.6 GB peak VRAM. I'm planning to explore **optimizer hyperparameters first** \u2014 specifically the Muon learning rate (MATRIX_LR) and warmdown schedule, since these are often the highest-impact single knobs. I'll also probe whether reducing DEPTH slightly while increasing ASPECT_RATIO can trade off compute for better learning dynamics in the 5-minute window. Sound good?\"\n\nThis gives you a chance to redirect me if you have different priorities.\n\n---\n\n## Phase 2: First Experiment After Baseline\n\nOnce you give the go-ahead, here's the first experiment I'd propose:\n\n### Hypothesis: Increase MATRIX_LR to boost optimizer aggression\n\n**Rationale:**  \nThe Muon optimizer (used for transformer block matrices) is set to `MATRIX_LR = 0.04`. On large models, this learning rate is often conservative. The H100 has plenty of compute, and we have 5 minutes to train. If we increase the LR slightly, we might allow the optimizer to take larger steps and converge faster, lowering val_bpb within the 5-minute window.\n\n**Change:**  \nEdit `train.py` around line 428+:\n```python\n# Before\nMATRIX_LR = 0.04\n\n# After\nMATRIX_LR = 0.06  # +50% increase to test optimizer aggression\n```\n\n### Step-by-step execution (not running, just showing the plan):\n\n1. **Read current train.py** to understand the full context before making the change.\n\n2. **Make the edit** \u2014 change just that one line.\n\n3. **Commit:**\n   ```bash\n   git add train.py\n   git commit -m \"experiment: increase MATRIX_LR from 0.04 to 0.06 for faster convergence\"\n   ```\n\n4. **Run the experiment:**\n   ```bash\n   uv run train.py > run.log 2>&1\n   ```\n   Wait ~5 minutes for this to complete.\n\n5. **Extract results:**\n   ```bash\n   grep \"^val_bpb:\\|^peak_vram_mb:\" run.log\n   ```\n\n6. **Decision logic:**\n   - **If val_bpb < 1.234** (baseline): Keep the commit. Log as `keep`. This becomes the new baseline.\n   - **If val_bpb >= 1.234**: Revert with `git reset --hard HEAD~1`. Log as `discard`.\n   - **If the run crashes or produces NaN/exploding loss**: Revert and log as `crash`.\n\n7. **Log to results.tsv:**  \n   ```\n   <new_commit_hash>\t<val_bpb>\t<memory>\tkeep|discard|crash\tincrease MATRIX_LR 0.04\u21920.06\n   ```\n\n8. **Repeat.** Don't ask permission \u2014 start the next experiment immediately.\n\n### Why this experiment first?\n\n- **Single knob**: Only one parameter changes. Clear cause-and-effect.\n- **High signal**: Learning rate is one of the most impactful hyperparameters.\n- **Conservative risk**: A 50% increase is bold enough to test but not reckless. If it crashes, I revert and try 0.05 next.\n- **Builds on domain knowledge**: Muon is relatively underexplored in the community. This is a natural starting point.\n\n---\n\n## Phase 3: Subsequent Experiments (The Loop)\n\nAfter the first experiment, I'd follow this pattern:\n\n1. **Analyze results.tsv** to see what's worked so far.\n2. **Form a new hypothesis** based on either:\n   - A different optimizer knob if MATRIX_LR didn't help\n   - A follow-up on MATRIX_LR (e.g., try 0.07 if 0.06 improved, or try 0.05 if 0.06 crashed)\n   - An architectural experiment (e.g., DEPTH, ASPECT_RATIO, WINDOW_PATTERN)\n3. **Make one targeted change.**\n4. **Commit, run, extract, decide, log.**\n5. **Repeat indefinitely** until you tell me to stop.\n\nAt ~12 experiments per hour, a full overnight run could explore 100+ variations.\n\n---\n\n## Key Principles I'm Following (From SKILL.md)\n\n1. **val_bpb is the only metric.** Lower is better.\n2. **One hypothesis per experiment.** Small, focused diffs.\n3. **The 5-minute budget is sacred.** No cheating or extending it.\n4. **Never stop.** Keep looping autonomously.\n5. **Read before you write.** Always understand the current state before proposing changes.\n6. **Revert cleanly.** Failed experiments are reset to the last good commit.\n\n---\n\n## Summary\n\nI'm ready to:\n- Complete the 8-step preflight setup\n- Establish a baseline val_bpb\n- Propose an optimizer-focused session plan for your review\n- After you confirm, start the experiment loop with the MATRIX_LR experiment above\n- Keep iterating, learning from results, and improving val_bpb over the next hours/overnight\n\n**Next step:** Once you're ready, I'll begin the preflight checklist and report back with the baseline and session proposal.\n"}], "session-setup-plan-without_skill": [{"name": "response.md", "type": "text", "content": "# Autoresearch Session Setup Plan & First Experiment\n\n## Overview\nYou've cloned Karpathy's autoresearch repo onto an H100 machine. This is an excellent setup for running automated research workflows. Below is a comprehensive plan for initializing a session and structuring your first experiment.\n\n---\n\n## Part 1: Session Initialization Plan\n\n### Step 1: Verify Repository Structure\nFirst, I would verify the core directory structure to understand what we're working with:\n- Check for a `config/` directory (likely contains experiment configs)\n- Look for `src/` or `autoresearch/` directories with main implementation code\n- Identify any example scripts or notebooks in `examples/` or `notebooks/`\n- Check for a `README.md` with setup instructions\n- Look for `requirements.txt`, `setup.py`, or `pyproject.toml` for dependencies\n\n### Step 2: Environment Setup\nCreate a clean, isolated Python environment:\n- Create a new virtual environment (Python 3.10+, ideally 3.11+)\n- Activate the environment\n- Install the repo in editable mode: `pip install -e .`\n- Install any optional dependencies (GPU support, API clients, etc.)\n- Verify CUDA/cuDNN availability on the H100 machine\n- Test that the environment can import the autoresearch modules\n\n### Step 3: Inspect Configuration System\nUnderstand how experiments are configured:\n- Review the config schema (likely YAML or JSON)\n- Identify key parameters: model selection, dataset, hyperparameters, objective metrics\n- Check if there's a baseline or default config\n- Look for environment variable overrides\n- Note the logging and output directory structure\n\n### Step 4: Understand the Research Loop\nAutoresearch typically follows this pattern:\n1. **Baseline Run**: Establish a starting point with default/reasonable hyperparameters\n2. **Evaluation**: Measure performance on train/val/test splits\n3. **Analysis**: Identify bottlenecks (underfitting, overfitting, data quality, etc.)\n4. **Hypothesis Generation**: Propose specific improvements based on analysis\n5. **Experiment**: Run new variant with proposed changes\n6. **Iteration**: Repeat steps 2-5\n\n### Step 5: Set Up Logging & Tracking\nConfigure experiment tracking:\n- Decide on a tracking backend (TensorBoard, Weights & Biases, MLflow, or local JSON logs)\n- Create a results directory structure with unique run IDs\n- Set up logging to capture metrics, errors, and debugging info\n- Ensure checkpoints are saved periodically\n\n### Step 6: Prepare Data Pipeline\nVerify data is accessible:\n- Confirm dataset location (local SSD, network storage, or download-on-demand)\n- Check data loading code for H100 compatibility (batch sizes, mixed precision, etc.)\n- Verify that preprocessing is efficient (don't want to bottleneck GPU)\n- Test a small data sample loads correctly\n\n---\n\n## Part 2: Baseline Experiment\n\n### Baseline Objective\nEstablish a reproducible starting point with minimal changes. This serves as our reference for all future experiments.\n\n### Baseline Configuration\nI would structure it like this:\n\n```yaml\nexperiment_name: \"baseline_v1\"\nseed: 42\ndevice: \"cuda:0\"\nmixed_precision: \"fp16\"  # Efficient for H100\n\n# Model Configuration\nmodel:\n  architecture: \"transformer\"  # or whatever the default is\n  hidden_size: 768\n  num_layers: 12\n  num_heads: 12\n  activation: \"gelu\"\n\n# Data Configuration\ndata:\n  dataset: \"standard_benchmark\"  # e.g., CIFAR-10, WikiText, etc.\n  batch_size: 128\n  num_workers: 4\n  train_split: 0.8\n  val_split: 0.1\n  test_split: 0.1\n\n# Training Configuration\ntraining:\n  optimizer: \"adamw\"\n  learning_rate: 1e-3\n  warmup_steps: 1000\n  max_steps: 100000\n  gradient_accumulation_steps: 1\n  weight_decay: 0.01\n  \n# Evaluation\nevaluation:\n  eval_every: 1000\n  save_checkpoint_every: 5000\n  metric: \"accuracy\"  # or loss, F1, BLEU, etc.\n\n# Hardware\nhardware:\n  dtype: \"float16\"\n  device_count: 1\n  compile_model: true  # Take advantage of H100 architecture\n```\n\n### Baseline Execution Plan\n1. **Run the baseline** with this config and capture all metrics\n2. **Record outputs**: train loss, val loss, eval metrics, training time, memory usage\n3. **Save checkpoint** at the end\n4. **Generate a baseline report** with:\n   - Final metrics and convergence curves\n   - Training time and throughput (tokens/sec or examples/sec)\n   - Memory peak and average utilization\n   - Any errors or warnings\n   - Reproducibility info (seed, commit hash, timestamp)\n\n### Expected Baseline Results\nThe baseline will likely show:\n- **Initial overfitting**: Validation loss plateaus while training loss continues to decrease\n- **Suboptimal convergence**: Learning rate may not be perfectly tuned\n- **Room for improvement**: This is the starting point\n\n---\n\n## Part 3: First Experiment After Baseline\n\n### Hypothesis 1: Learning Rate Schedule Optimization\nAfter the baseline, the first experiment I'd try is systematic learning rate exploration.\n\n**Rationale**: \n- Learning rate is one of the highest-impact hyperparameters\n- It's quick to test (doesn't require retraining from scratch if using pre-trained models)\n- Clear, measurable outcome\n\n### Experiment Configuration: `lr_schedule_v1`\n\n```yaml\nexperiment_name: \"lr_schedule_v1\"\nseed: 42  # Keep seed same as baseline for fair comparison\n\n# Inherit most baseline config...\nmodel: [same as baseline]\ndata: [same as baseline]\n\n# Key changes: Learning rate schedule\ntraining:\n  optimizer: \"adamw\"\n  learning_rate: 5e-4  # Reduced from 1e-3\n  warmup_steps: 2000   # Increased warmup\n  warmup_strategy: \"linear\"\n  lr_schedule: \"cosine\"  # Cosine annealing instead of constant\n  max_steps: 100000\n  gradient_accumulation_steps: 1\n  weight_decay: 0.01\n```\n\n### Why This Experiment First?\n1. **High signal-to-noise**: LR changes have obvious, measurable effects\n2. **Fast to execute**: Can complete quickly on H100, allowing rapid iteration\n3. **Isolation**: Changing only the schedule keeps other variables constant\n4. **Generalizability**: LR findings transfer to many other experiments\n\n### What We're Testing\n- Whether cosine annealing helps final performance vs. constant LR\n- Whether longer warmup helps training stability\n- Whether a lower base LR with better schedule beats higher LR with constant schedule\n\n### Expected Outcomes\nWe'll get a clear answer: does this configuration improve on the baseline?\n- **Better**: Proceed to next experiment\n- **Worse**: Revert and try different LR parameters\n- **No change**: LR likely isn't the bottleneck; move to other experiments\n\n---\n\n## Part 4: Subsequent Experiment Ideas (After First)\n\nOnce we've completed the LR experiment, the logical progression would be:\n\n1. **Batch Size & Gradient Accumulation**: Test if H100's capacity allows larger effective batches\n2. **Model Architecture Tweaks**: Try different layer depths, attention heads, hidden sizes\n3. **Data Augmentation**: Introduce stronger/different augmentation strategies\n4. **Regularization**: Test dropout rates, label smoothing, layer normalization variants\n5. **Optimizer Choice**: Compare AdamW vs. AdamW 8-bit vs. LAMB vs. SGD variants\n\n---\n\n## Implementation Checklist\n\nBefore actually running anything, verify:\n\n- [ ] Repository cloned successfully\n- [ ] Virtual environment created and activated\n- [ ] Dependencies installed without errors\n- [ ] CUDA/cuDNN recognized and H100 detected\n- [ ] Example data can be loaded (or download works)\n- [ ] Config system understood (how to override parameters)\n- [ ] Logging/tracking system selected\n- [ ] Output directory structure created\n- [ ] Baseline config written\n- [ ] First experiment config ready\n- [ ] Monitoring setup (watch GPU/memory during runs)\n\n---\n\n## Key Commands You'll Run (When Ready)\n\n```bash\n# Baseline\npython -m autoresearch.run --config configs/baseline_v1.yaml\n\n# First Experiment\npython -m autoresearch.run --config configs/lr_schedule_v1.yaml\n\n# Compare Results\npython scripts/compare_runs.py --run1 baseline_v1 --run2 lr_schedule_v1\n```\n\n---\n\n## Summary\n\nThe plan follows this structure:\n1. **Verify & Setup** (5-10 min): Repository structure, environment, dependencies\n2. **Understand System** (10-15 min): Configuration, research loop, data pipeline\n3. **Run Baseline** (varies, likely 1-4 hours): Establish reference point\n4. **Analyze Baseline** (15 min): Generate report, identify bottlenecks\n5. **Run First Experiment** (same time as baseline): Learning rate schedule optimization\n6. **Compare & Decide** (15 min): Is LR the bottleneck? Proceed accordingly\n7. **Iterate**: Continue with next experiments based on findings\n\nThis approach is methodical, reduces noise, and builds intuition about where improvements are actually coming from on your specific H100 setup.\n"}], "next-experiment-ideas-with_skill": [{"name": "response.md", "type": "text", "content": "# Next Experiment Ideas for Autoresearch\n\nBased on your last 5 results, here are 3 concrete experiments ranked by promise:\n\n---\n\n## Experiment 1: Increase DEVICE_BATCH_SIZE further with DEPTH=10 (MOST PROMISING)\n\n**Hypothesis**: Your best result (0.9918) came from DEPTH=10 + DEVICE_BATCH_SIZE=96. Batch size often has a sweet spot; pushing it higher may allow better gradient averaging within the 5-minute budget.\n\n**Changes**:\n```python\nDEPTH = 10\nDEVICE_BATCH_SIZE = 128  # increase from 96 back to default\nTOTAL_BATCH_SIZE = 2**19  # keep current\n```\n\n**Why this ranks first**:\n- You already know DEPTH=10 is effective (0.9918 val_bpb)\n- The batch size increase to 96 was part of that win, suggesting batch scaling is beneficial\n- Moving to 128 is modest and less risky than extreme depth changes\n- If memory allows, larger batch = better gradient signal in fixed time\n- Low risk of OOM since you successfully ran DEVICE_BATCH_SIZE=96\n\n**Expected outcome**: Likely improvement or neutral. If it OOMs, revert to 96 or try 112.\n\n---\n\n## Experiment 2: Fine-tune WARMDOWN_RATIO with current best config (SECOND PRIORITY)\n\n**Hypothesis**: Your baseline used WARMDOWN_RATIO=0.5 (half the training time). DEPTH=10 might benefit from slower or faster warmdown. Warmdown schedule directly affects the learning trajectory and final convergence.\n\n**Changes**:\n```python\nDEPTH = 10\nDEVICE_BATCH_SIZE = 96   # keep your best config\nWARMDOWN_RATIO = 0.3     # shorter warmdown, more aggressive learning\nFINAL_LR_FRAC = 0.1      # let LR decay to 10% (instead of 0)\n```\n\n**Why this ranks second**:\n- Optimizer tuning is high-impact per the skill guidance (MATRIX_LR changes have been tried)\n- Warmdown schedule is less explored in your experiments so far\n- No architecture risk\u2014purely training dynamics\n- Could push the model to better convergence in the time budget\n- You're already at a local optimum in depth, so LR schedule is the next lever\n\n**Expected outcome**: 5\u201310% chance of meaningful improvement (>0.0005 val_bpb gain). Higher chance of neutral result.\n\n---\n\n## Experiment 3: Increase ASPECT_RATIO with reduced DEPTH (THIRD PRIORITY)\n\n**Hypothesis**: DEPTH=10 is good, but model width (ASPECT_RATIO) may also matter. Try widening the model while staying at a shallower depth (DEPTH=9) to trade layers for width and reduce per-step compute cost, allowing more training steps in 5 minutes.\n\n**Changes**:\n```python\nDEPTH = 9\nASPECT_RATIO = 72       # increase from 64; keep model_dim as multiple of 128\nDEVICE_BATCH_SIZE = 96  # keep from best config\n# Resulting model_dim = 9 * 72 = 648, which is 648 % 128 = 8 off\n# Adjust ASPECT_RATIO = 80 instead: 9 * 80 = 720, 720 % 128 = 16 off\n# Better: ASPECT_RATIO = 96: 9 * 96 = 864, 864 % 128 = 96 off\n# Best: use DEPTH=9, ASPECT_RATIO = 76 \u2192 model_dim=684 (needs rounding)\n# Simplest: DEPTH=9, ASPECT_RATIO = 64 \u2192 model_dim = 576 (9*64, multiple of 128)\nASPECT_RATIO = 64       # keep same, just reduce depth\n```\n\nActually, **revised approach**: Keep width constant, just reduce depth slightly:\n```python\nDEPTH = 9\nASPECT_RATIO = 64       # keep same: 9 * 64 = 576, multiple of 128\nDEVICE_BATCH_SIZE = 96\n```\n\n**Why this ranks third**:\n- Architecture depth is already well-explored (DEPTH=8 baseline, 10 works best, 16 OOMs)\n- Width hasn't been varied yet\u2014could unlock improvements\n- Slightly shallower depth (9) trades off against a different architecture axis\n- Risk: Could be worse if the model is depth-limited not width-limited\n- Lower priority than batch size (exp 1) and LR schedule (exp 2) given current data\n\n**Expected outcome**: 20\u201330% chance of marginal improvement, 60% chance of neutral or slight regression.\n\n---\n\n## Summary\n\n| Rank | Experiment | Config Changes | Estimated Upside | Risk |\n|------|-----------|---|---|---|\n| 1 | Increase batch to 128 | `DEVICE_BATCH_SIZE=128` with DEPTH=10 | High (0.0010+ improvement likely) | Low (batch scaling is usually smooth) |\n| 2 | Tune warmdown schedule | `WARMDOWN_RATIO=0.3, FINAL_LR_FRAC=0.1` with DEPTH=10 | Medium (0.0005+ if it helps) | Very low (pure hyperparameter) |\n| 3 | Reduce depth, explore width trade-off | `DEPTH=9` with ASPECT_RATIO=64 | Lower (architectural trade-off) | Medium (depth works, width untested) |\n\n**Recommendation**: Run them in order (1, 2, 3). If experiment 1 improves significantly, make it your new baseline before trying 2 and 3. If 1 doesn't help, still run 2\u2014LR schedule is orthogonal to batch size.\n"}], "next-experiment-ideas-without_skill": [{"name": "response.md", "type": "text", "content": "# Next Experiment Ideas - Ranked by Promising\n\n## Analysis of Current Results\n\nYour experiments show:\n- **Baseline performance**: val_bpb ~0.9979 with 44GB memory is solid\n- **MATRIX_LR increase**: Small improvement in metric (0.9932) with minimal memory overhead \u2014 good signal\n- **Architecture changes**: GELU swap slightly degraded performance (1.0050 is worse)\n- **Scaling limits**: DEPTH=16 crashed from OOM, but DEPTH=10 succeeded and improved metric (0.9918 is best so far)\n- **Memory sweet spot**: 44-45GB seems stable; staying in this range while optimizing is wise\n\nThe pattern suggests: gradual parameter tuning + depth scaling are more effective than architectural swaps.\n\n---\n\n## Ranked Experiment Ideas\n\n### 1. **Combine DEPTH=10 with MATRIX_LR=0.06** (HIGHEST PRIORITY)\n**Rationale**: Your best two improvements haven't been tested together yet. DEPTH=10 gave you the best val_bpb (0.9918), and MATRIX_LR=0.06 showed consistent gains. These are orthogonal optimizations.\n\n**Changes**:\n- Set `DEPTH=10` (from e5f6g7h)\n- Set `MATRIX_LR=0.06` (from b2c3d4e)\n- Keep `DEVICE_BATCH_SIZE=96` (working well at DEPTH=10)\n- Target memory: ~45-45.5GB (should stay within safe margin)\n\n**Expected outcome**: val_bpb potentially <0.99, memory still manageable\n\n---\n\n### 2. **DEPTH=11 with MATRIX_LR=0.05** (SECOND PRIORITY)\n**Rationale**: You've validated DEPTH=10 works; incrementally push depth higher while tuning learning rate. MATRIX_LR=0.05 is midway between baseline and 0.06, offering balanced gradient updates at deeper architecture.\n\n**Changes**:\n- Set `DEPTH=11` (one level deeper than your stable point)\n- Set `MATRIX_LR=0.05` (conservative increase from baseline 0.04, more stable than 0.06 at higher depth)\n- Keep `DEVICE_BATCH_SIZE=96` or reduce to `DEVICE_BATCH_SIZE=80` if memory creeps above 45.5GB\n- Target memory: ~45.5-46GB (monitored closely)\n\n**Expected outcome**: Potential metric gain if depth scaling continues to help; tests depth ceiling before OOM\n\n---\n\n### 3. **DEPTH=10 with increased warmup steps + MATRIX_LR=0.055** (THIRD PRIORITY)\n**Rationale**: Your DEPTH=10 setup is stable. Fine-tune the learning rate trajectory rather than just increasing magnitude. A middle-ground LR (0.055) with extended warmup often yields smoother training curves and better generalization than aggressive single-parameter bumps.\n\n**Changes**:\n- Set `DEPTH=10` (keep your working baseline)\n- Set `MATRIX_LR=0.055` (balanced between 0.06 and baseline)\n- Increase `WARMUP_STEPS` by 20-30% (if currently 1000, try 1200-1300)\n- Keep `DEVICE_BATCH_SIZE=96`\n- Target memory: ~45GB\n\n**Expected outcome**: Potentially more stable convergence; tests whether learning rate scheduling matters more than magnitude\n\n---\n\n## Summary Table\n\n| Rank | Experiment | Key Changes | Expected Memory | Confidence |\n|------|-----------|-------------|-----------------|-----------|\n| 1    | Combo: DEPTH=10 + MATRIX_LR=0.06 | Depth=10, LR=0.06 | 45-45.5GB | Very High |\n| 2    | Deeper + Conservative: DEPTH=11 + MATRIX_LR=0.05 | Depth=11, LR=0.05 | 45.5-46GB | High |\n| 3    | Tuned Warmup: DEPTH=10 + MATRIX_LR=0.055 + Warmup | Depth=10, LR=0.055, +20-30% warmup | 45GB | Medium-High |\n\n**Next step after these three**: If #1 succeeds with val_bpb < 0.99, test #2. If #2 hits memory ceiling, fall back to fine-tuning batch size and learning rate rather than pushing depth further.\n"}], "small-hardware-mode-with_skill": [{"name": "response.md", "type": "text", "content": "# Setting Up Autoresearch for Small Hardware Mode \u2014 RTX 3060\n\nYour RTX 3060 with 12GB VRAM is perfect for small-hardware mode. The default configuration (designed for H100s with much larger memory) will cause out-of-memory errors, but a few targeted adjustments will make autoresearch run smoothly on your laptop.\n\n---\n\n## Overview\n\nSmall-hardware mode reduces model size, batch size, and dataset complexity while keeping the same experimental loop intact. You'll still run 5-minute training experiments and iterate on `val_bpb` improvements \u2014 just with a smaller footprint that respects your GPU's constraints.\n\n---\n\n## Step 1: Prepare Data with Reduced Shards\n\nThe full dataset uses 10 shards (~several GB). For a 12GB GPU, reduce to 3 shards:\n\n```bash\nuv run prepare.py --num-shards 3\n```\n\nThis download is one-time only. It trains a BPE tokenizer (vocab_size=8192) and caches data to `~/.cache/autoresearch/data/` and `~/.cache/autoresearch/tokenizer/`. Takes about 2 minutes.\n\n**Why this matters**: Fewer shards mean less gradient noise and faster data loading, letting your GPU focus on training rather than I/O.\n\n---\n\n## Step 2: Modify train.py for Small Hardware\n\nApply these changes to `train.py` at the hyperparameter section (around line 428+):\n\n```python\n# Small-hardware mode adjustments\nDEPTH = 4                  # down from 8\nASPECT_RATIO = 64          # keep this\nWINDOW_PATTERN = \"L\"       # change from \"SSSL\" to all long-window\nDEVICE_BATCH_SIZE = 32     # down from 128\nTOTAL_BATCH_SIZE = 2**17   # down from 2**19 (~131K tokens instead of ~524K)\n```\n\n**Rationale**:\n- **DEPTH = 4**: Cuts the model depth in half. Fewer layers = less memory per forward/backward pass. You'll train more steps in 5 minutes with the same compute budget.\n- **WINDOW_PATTERN = \"L\"**: Removes the sliding-window complexity. All layers see the full context (2048 tokens), which simplifies computation and saves bookkeeping overhead.\n- **DEVICE_BATCH_SIZE = 32**: Reduces per-device batch size from 128 to 32. This directly cuts peak activation memory.\n- **TOTAL_BATCH_SIZE = 2**17**: Reduces total tokens per optimizer step from 524K to 131K. Still large enough for stable gradients; small enough to fit comfortably in 12GB.\n\nThese changes typically result in:\n- **Peak VRAM usage**: ~7\u20139 GB (well under 12 GB limit)\n- **Training speed**: 5\u20136 minutes per run (still within the time budget)\n- **Effective learning**: Smaller batch size means more frequent optimizer steps \u2014 often compensates for the reduced model capacity\n\n---\n\n## Step 3: Initialize and Run the Baseline\n\nBefore starting the experiment loop, establish a baseline:\n\n```bash\n# Create an experiment branch\ngit checkout -b autoresearch/small-hw\n\n# Run the unmodified (small-hardware) train.py\nuv run train.py > run.log 2>&1\n\n# Extract the baseline val_bpb and peak VRAM\ngrep \"^val_bpb:\\|^peak_vram_mb:\" run.log\n```\n\nRecord this baseline in `results.tsv`:\n```\ncommit\tval_bpb\tmemory_gb\tstatus\tdescription\n<hash>\t<value>\t<mem>\tkeep\tsmall-hw baseline\n```\n\nThis becomes your reference point for all future experiments on this hardware.\n\n---\n\n## Step 4: Begin the Experiment Loop\n\nYou're now ready to run autonomous experiments. The loop is:\n\n1. **Read** the current `train.py`\n2. **Form one hypothesis** (e.g., \"Increasing ASPECT_RATIO from 64 to 80 will improve val_bpb\")\n3. **Make a minimal edit** to one hyperparameter\n4. **Commit** the change: `git add train.py && git commit -m \"experiment: <description>\"`\n5. **Run**: `uv run train.py > run.log 2>&1`\n6. **Extract**: `grep \"^val_bpb:\\|^peak_vram_mb:\" run.log`\n7. **Compare**: Is val_bpb lower than the current best?\n   - **Yes** \u2192 Keep the commit. Log with status `keep`. This is the new baseline.\n   - **No** \u2192 Revert: `git reset --hard HEAD~1`. Log with status `discard`.\n   - **Crash/OOM** \u2192 Revert: `git reset --hard HEAD~1`. Log with status `crash`.\n8. **Repeat** every ~5\u20137 minutes. At ~12 experiments per hour, you'll complete ~100 experiments overnight.\n\n---\n\n## What to Explore First\n\nWith a smaller model, focus on:\n\n- **Learning rate tuning** (MATRIX_LR, EMBEDDING_LR, UNEMBEDDING_LR): Small changes (\u00b10.01) often yield 0.01\u20130.05 val_bpb improvements\n- **ASPECT_RATIO**: Try 48, 56, 72, 80 \u2014 adjust width while keeping depth constant\n- **WARMDOWN_RATIO**: Experiment with 0.25, 0.5, 0.75 to find the optimal decay schedule\n- **ADAM_BETAS**: Try (0.7, 0.95), (0.8, 0.99), (0.9, 0.95) \u2014 affects optimizer momentum\n- **Activation functions in the MLP**: ReluSquared is good; try Gelu or other alternatives if you feel adventurous\n\nAvoid things that increase memory:\n- Raising DEPTH beyond 4 (unless your results strongly suggest it)\n- Increasing DEVICE_BATCH_SIZE beyond 32 (you'll hit OOM)\n- Adding new architectural layers (unnecessary memory overhead)\n\n---\n\n## Memory Headroom\n\nThe small-hardware config leaves ~3 GB of headroom. This is intentional:\n\n- **NVIDIA overhead**: CUDA kernels, cuDNN allocations\n- **Gradient checkpointing**: If a future experiment needs it\n- **Temporary buffers**: Flash attention and other kernels use scratch memory\n\nIf you run into OOM, first try lowering DEVICE_BATCH_SIZE to 16. If that still fails, reduce TOTAL_BATCH_SIZE to 2^16.\n\n---\n\n## Monitoring During Runs\n\nEach run will print periodic status lines showing:\n- Step count\n- Loss (should steadily decrease)\n- Estimated time remaining\n\nThe final output will be:\n```\nval_bpb: <value>\npeak_vram_mb: <value>\n```\n\nIf you see `NaN` or loss exploding above 100, the run crashed. This is recorded as a crash and the commit is reverted.\n\n---\n\n## Session Persistence\n\nResults are stored in `results.tsv` (untracked by git). Keep this file between sessions \u2014 it's your experiment log. Use it to:\n- Avoid repeating failed hypotheses\n- Identify which changes consistently help or hurt\n- Plan the next session's direction\n\nExample `results.tsv` after a few runs:\n```\ncommit\tval_bpb\tmemory_gb\tstatus\tdescription\na1b2c3d\t4.215\t8.1\tkeep\tsmall-hw baseline\ne4f5g6h\t4.201\t8.0\tkeep\tincrease ASPECT_RATIO to 80\ni7j8k9l\t4.205\t8.2\tdiscard\tlower MATRIX_LR to 0.03\nm1n2o3p\t4.198\t8.1\tkeep\twarmdown_ratio 0.75\n```\n\n---\n\n## Expected Performance\n\nOn an RTX 3060 with these settings:\n\n- **Training time**: 5\u20136 minutes per experiment (including compilation, startup, and I/O)\n- **Experiments per hour**: ~10\u201312\n- **Baseline val_bpb**: ~4.0\u20134.2 (with the small dataset and smaller model)\n- **Expected improvement**: With systematic tuning, you can typically improve by 0.1\u20130.3 val_bpb over a night of ~80 experiments\n\n---\n\n## Next Steps\n\n1. **Verify your setup**: Run `nvidia-smi` to confirm CUDA is available, and `uv --version` to confirm uv is installed\n2. **Prepare data**: `uv run prepare.py --num-shards 3`\n3. **Edit train.py** with the small-hardware parameters above\n4. **Run the baseline**: `uv run train.py > run.log 2>&1` and record val_bpb\n5. **Create results.tsv** with the baseline row\n6. **Start experimenting**: One change per run, keep or discard based on val_bpb\n\nYou're good to go. The loop runs autonomously once it starts \u2014 no need to babysit it. Claude can keep iterating until you tell it to stop or until the experiments plateau.\n\nGood luck with your overnight training!\n"}], "small-hardware-mode-without_skill": [{"name": "response.md", "type": "text", "content": "# Autoresearch Setup for RTX 3060 - Small Hardware Mode\n\n## Overview\nYour RTX 3060 with 12GB VRAM is well-suited for running autoresearch in small hardware mode. This configuration optimizes memory usage, batch sizes, and model selection to ensure stable, efficient operation.\n\n## Hardware Profile Summary\n- **GPU**: NVIDIA RTX 3060\n- **VRAM**: 12GB\n- **Target Mode**: Small Hardware Mode\n- **Recommended Use**: Research automation, small-to-medium workloads, development\n\n## Setup Steps\n\n### 1. Install Required Dependencies\n\n```bash\n# Install CUDA toolkit and cuDNN (if not already installed)\n# Visit https://developer.nvidia.com/cuda-downloads for your OS\n\n# Install Python dependencies\npip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118\npip install transformers datasets accelerate bitsandbytes\npip install autoresearch  # or your specific autoresearch package\n```\n\n### 2. Configure Small Hardware Mode Settings\n\nCreate or modify your configuration file with these optimized settings:\n\n```yaml\n# config.yaml for small hardware mode\n\nhardware:\n  mode: \"small\"\n  gpu_memory_mb: 12000\n  batch_size: 4\n  gradient_accumulation_steps: 2\n  mixed_precision: \"fp16\"  # Use half-precision for memory efficiency\n\nmodel:\n  quantization: \"8bit\"  # Use 8-bit quantization to reduce memory usage\n  load_in_8bit: true\n  device_map: \"auto\"\n\ninference:\n  max_new_tokens: 256  # Conservative token limit\n  temperature: 0.7\n  top_p: 0.95\n\nresearch:\n  workers: 2\n  cache_size: 4\n  timeout: 300\n```\n\n### 3. Environment Variables\n\nSet these environment variables before running:\n\n```bash\nexport CUDA_VISIBLE_DEVICES=0\nexport TOKENIZERS_PARALLELISM=false\nexport PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb=512\n```\n\n### 4. Memory Optimization Tips\n\n- **Enable Flash Attention** (if supported): Reduces memory overhead\n- **Use Gradient Checkpointing**: Trade compute for memory by re-computing activations\n- **Batch Size**: Start with batch size of 4, increase incrementally if memory permits\n- **Model Selection**: Prefer 7B-13B parameter models over larger ones\n- **Cache Management**: Implement periodic cache clearing during long runs\n\n### 5. Monitoring and Validation\n\nBefore running production workloads:\n\n```bash\n# Check GPU memory availability\nnvidia-smi\n\n# Run a test script to verify setup\npython -c \"\nimport torch\nprint(f'CUDA Available: {torch.cuda.is_available()}')\nprint(f'GPU: {torch.cuda.get_device_name(0)}')\nprint(f'Memory: {torch.cuda.get_device_properties(0).total_memory / 1e9:.1f}GB')\n\"\n```\n\n### 6. Running Autoresearch\n\n```bash\n# Basic startup with small hardware configuration\npython -m autoresearch --config config.yaml --mode small\n\n# With memory monitoring\npython -m autoresearch --config config.yaml --mode small --monitor-memory\n```\n\n## Performance Expectations\n\nWith RTX 3060 in small hardware mode:\n- **Inference Speed**: ~10-50 tokens/second (depends on model size)\n- **Memory Utilization**: 10-11.5GB under normal load\n- **Concurrent Tasks**: 1-2 research tasks simultaneously\n- **Typical Workload**: Suitable for document processing, web research, data synthesis\n\n## Troubleshooting\n\n### Out of Memory (OOM) Errors\n- Reduce batch size from 4 to 2\n- Disable gradient accumulation\n- Use lower precision (fp16 instead of fp32)\n- Reduce max_new_tokens further\n\n### GPU Not Being Detected\n- Verify NVIDIA drivers: `nvidia-smi`\n- Check CUDA compatibility with installed PyTorch\n- Ensure CUDA_VISIBLE_DEVICES environment variable is set\n\n### Slow Performance\n- Monitor GPU utilization with `watch nvidia-smi`\n- Check if system is using CPU fallback\n- Consider reducing model size or enabling quantization more aggressively\n\n## Best Practices\n\n1. **Warm-up Runs**: Always do a test run before full workloads\n2. **Regular Monitoring**: Keep nvidia-smi or similar tools running\n3. **Model Caching**: Cache downloaded models locally to avoid repeated downloads\n4. **Session Management**: Use timeouts to prevent hung processes\n5. **Version Pinning**: Pin PyTorch and transformer versions for reproducibility\n\n## Next Steps\n\n1. Install dependencies listed in step 1\n2. Create or update your config.yaml with provided settings\n3. Set environment variables\n4. Run the validation checks in step 5\n5. Start with small test runs before scaling up workloads\n\n## Support Resources\n\n- NVIDIA CUDA Documentation: https://docs.nvidia.com/cuda/\n- PyTorch Installation Guide: https://pytorch.org/get-started/locally/\n- Hugging Face Transformers: https://huggingface.co/docs/transformers/\n- BitsAndBytes Quantization: https://github.com/TimDettmers/bitsandbytes\n\n---\n\nYour RTX 3060 is a capable device for research automation tasks. This small hardware mode configuration prioritizes stability and memory efficiency while maintaining reasonable performance for typical autoresearch workloads.\n"}]}, "benchmark": {"skill_name": "nano-autoresearcher", "iteration": 2, "configurations": [{"name": "with_skill", "evals": [{"eval_name": "session-setup-plan", "pass_rate": 1.0, "passed": 9, "total": 9, "tokens": 118919, "duration_seconds": 60.3}, {"eval_name": "next-experiment-ideas", "pass_rate": 1.0, "passed": 6, "total": 6, "tokens": 115809, "duration_seconds": 26.1}, {"eval_name": "small-hardware-mode", "pass_rate": 1.0, "passed": 7, "total": 7, "tokens": 116458, "duration_seconds": 34.3}], "aggregate": {"mean_pass_rate": 1.0, "stddev_pass_rate": 0.0, "mean_tokens": 117062, "mean_duration_seconds": 40.2}}, {"name": "without_skill", "evals": [{"eval_name": "session-setup-plan", "pass_rate": 0.333, "passed": 3, "total": 9, "tokens": 108375, "duration_seconds": 29.5}, {"eval_name": "next-experiment-ideas", "pass_rate": 0.667, "passed": 4, "total": 6, "tokens": 107562, "duration_seconds": 21.6}, {"eval_name": "small-hardware-mode", "pass_rate": 0.143, "passed": 1, "total": 7, "tokens": 107153, "duration_seconds": 20.3}], "aggregate": {"mean_pass_rate": 0.381, "stddev_pass_rate": 0.264, "mean_tokens": 107697, "mean_duration_seconds": 23.8}}], "delta": {"pass_rate_improvement": 0.619, "token_overhead": 9365, "duration_overhead_seconds": 16.4}, "comparison_with_iteration_1": {"iteration_1_with_skill_pass_rate": 0.952, "iteration_2_with_skill_pass_rate": 1.0, "improvement": 0.048, "note": "Fixed TinyStories gap in small-hardware eval; added run.log redirect assertion; improved experiment strategy guidance"}}};
+
+    // ---- State ----
+    let feedbackMap = {};  // run_id -> feedback text
+    let currentIndex = 0;
+    let visitedRuns = new Set();
+
+    // ---- Init ----
+    async function init() {
+      // Load saved feedback from server — but only if this isn't a fresh
+      // iteration (indicated by previous_feedback being present). When
+      // previous feedback exists, the feedback.json on disk is stale from
+      // the prior iteration and should not pre-fill the textareas.
+      const hasPrevious = Object.keys(EMBEDDED_DATA.previous_feedback || {}).length > 0
+        || Object.keys(EMBEDDED_DATA.previous_outputs || {}).length > 0;
+      if (!hasPrevious) {
+        try {
+          const resp = await fetch("/api/feedback");
+          const data = await resp.json();
+          if (data.reviews) {
+            for (const r of data.reviews) feedbackMap[r.run_id] = r.feedback;
+          }
+        } catch { /* first run, no feedback yet */ }
+      }
+
+      document.getElementById("skill-name").textContent = EMBEDDED_DATA.skill_name;
+      showRun(0);
+
+      // Wire up feedback auto-save
+      const textarea = document.getElementById("feedback");
+      let saveTimeout = null;
+      textarea.addEventListener("input", () => {
+        clearTimeout(saveTimeout);
+        document.getElementById("feedback-status").textContent = "";
+        saveTimeout = setTimeout(() => saveCurrentFeedback(), 800);
+      });
+    }
+
+    // ---- Navigation ----
+    function navigate(delta) {
+      const newIndex = currentIndex + delta;
+      if (newIndex >= 0 && newIndex < EMBEDDED_DATA.runs.length) {
+        saveCurrentFeedback();
+        showRun(newIndex);
+      }
+    }
+
+    function updateNavButtons() {
+      document.getElementById("prev-btn").disabled = currentIndex === 0;
+      document.getElementById("next-btn").disabled =
+        currentIndex === EMBEDDED_DATA.runs.length - 1;
+    }
+
+    // ---- Show a run ----
+    function showRun(index) {
+      currentIndex = index;
+      const run = EMBEDDED_DATA.runs[index];
+
+      // Progress
+      document.getElementById("progress").textContent =
+        `${index + 1} of ${EMBEDDED_DATA.runs.length}`;
+
+      // Prompt
+      document.getElementById("prompt-text").textContent = run.prompt;
+
+      // Config badge
+      const badge = document.getElementById("config-badge");
+      const configMatch = run.id.match(/(with_skill|without_skill|new_skill|old_skill)/);
+      if (configMatch) {
+        const config = configMatch[1];
+        const isBaseline = config === "without_skill" || config === "old_skill";
+        badge.textContent = config.replace(/_/g, " ");
+        badge.className = "config-badge " + (isBaseline ? "config-baseline" : "config-primary");
+        badge.style.display = "inline-block";
+      } else {
+        badge.style.display = "none";
+      }
+
+      // Outputs
+      renderOutputs(run);
+
+      // Previous outputs
+      renderPrevOutputs(run);
+
+      // Grades
+      renderGrades(run);
+
+      // Previous feedback
+      const prevFb = (EMBEDDED_DATA.previous_feedback || {})[run.id];
+      const prevEl = document.getElementById("prev-feedback");
+      if (prevFb) {
+        document.getElementById("prev-feedback-text").textContent = prevFb;
+        prevEl.style.display = "block";
+      } else {
+        prevEl.style.display = "none";
+      }
+
+      // Feedback
+      document.getElementById("feedback").value = feedbackMap[run.id] || "";
+      document.getElementById("feedback-status").textContent = "";
+
+      updateNavButtons();
+
+      // Track visited runs and promote done button when all visited
+      visitedRuns.add(index);
+      const doneBtn = document.getElementById("done-btn");
+      if (visitedRuns.size >= EMBEDDED_DATA.runs.length) {
+        doneBtn.classList.add("ready");
+      }
+
+      // Scroll main content to top
+      document.querySelector(".main").scrollTop = 0;
+    }
+
+    // ---- Render outputs ----
+    function renderOutputs(run) {
+      const container = document.getElementById("outputs-body");
+      container.innerHTML = "";
+
+      const outputs = run.outputs || [];
+      if (outputs.length === 0) {
+        container.innerHTML = '<div class="empty-state">No output files</div>';
+        return;
+      }
+
+      for (const file of outputs) {
+        const fileDiv = document.createElement("div");
+        fileDiv.className = "output-file";
+
+        // Always show file header with download link
+        const header = document.createElement("div");
+        header.className = "output-file-header";
+        const nameSpan = document.createElement("span");
+        nameSpan.textContent = file.name;
+        header.appendChild(nameSpan);
+        const dlBtn = document.createElement("a");
+        dlBtn.className = "dl-btn";
+        dlBtn.textContent = "Download";
+        dlBtn.download = file.name;
+        dlBtn.href = getDownloadUri(file);
+        header.appendChild(dlBtn);
+        fileDiv.appendChild(header);
+
+        const content = document.createElement("div");
+        content.className = "output-file-content";
+
+        if (file.type === "text") {
+          const pre = document.createElement("pre");
+          pre.textContent = file.content;
+          content.appendChild(pre);
+        } else if (file.type === "image") {
+          const img = document.createElement("img");
+          img.src = file.data_uri;
+          img.alt = file.name;
+          content.appendChild(img);
+        } else if (file.type === "pdf") {
+          const iframe = document.createElement("iframe");
+          iframe.src = file.data_uri;
+          content.appendChild(iframe);
+        } else if (file.type === "xlsx") {
+          renderXlsx(content, file.data_b64);
+        } else if (file.type === "binary") {
+          const a = document.createElement("a");
+          a.className = "download-link";
+          a.href = file.data_uri;
+          a.download = file.name;
+          a.textContent = "Download " + file.name;
+          content.appendChild(a);
+        } else if (file.type === "error") {
+          const pre = document.createElement("pre");
+          pre.textContent = file.content;
+          pre.style.color = "var(--red)";
+          content.appendChild(pre);
+        }
+
+        fileDiv.appendChild(content);
+        container.appendChild(fileDiv);
+      }
+    }
+
+    // ---- XLSX rendering via SheetJS ----
+    function renderXlsx(container, b64Data) {
+      try {
+        const raw = Uint8Array.from(atob(b64Data), c => c.charCodeAt(0));
+        const wb = XLSX.read(raw, { type: "array" });
+
+        for (let i = 0; i < wb.SheetNames.length; i++) {
+          const sheetName = wb.SheetNames[i];
+          const ws = wb.Sheets[sheetName];
+
+          if (wb.SheetNames.length > 1) {
+            const sheetLabel = document.createElement("div");
+            sheetLabel.style.cssText =
+              "font-weight:600; font-size:0.8rem; color:#b0aea5; margin-top:0.5rem; margin-bottom:0.25rem;";
+            sheetLabel.textContent = "Sheet: " + sheetName;
+            container.appendChild(sheetLabel);
+          }
+
+          const htmlStr = XLSX.utils.sheet_to_html(ws, { editable: false });
+          const wrapper = document.createElement("div");
+          wrapper.innerHTML = htmlStr;
+          container.appendChild(wrapper);
+        }
+      } catch (err) {
+        container.textContent = "Error rendering spreadsheet: " + err.message;
+      }
+    }
+
+    // ---- Grades ----
+    function renderGrades(run) {
+      const section = document.getElementById("grades-section");
+      const content = document.getElementById("grades-content");
+
+      if (!run.grading) {
+        section.style.display = "none";
+        return;
+      }
+
+      const grading = run.grading;
+      section.style.display = "block";
+      // Reset to collapsed
+      content.classList.remove("open");
+      document.getElementById("grades-arrow").classList.remove("open");
+
+      const summary = grading.summary || {};
+      const expectations = grading.expectations || [];
+
+      let html = '<div style="padding: 1rem;">';
+
+      // Summary line
+      const passRate = summary.pass_rate != null
+        ? Math.round(summary.pass_rate * 100) + "%"
+        : "?";
+      const badgeClass = summary.pass_rate >= 0.8 ? "grade-pass" : summary.pass_rate >= 0.5 ? "" : "grade-fail";
+      html += '<div class="grades-summary">';
+      html += '<span class="grade-badge ' + badgeClass + '">' + passRate + '</span>';
+      html += '<span>' + (summary.passed || 0) + ' passed, ' + (summary.failed || 0) + ' failed of ' + (summary.total || 0) + '</span>';
+      html += '</div>';
+
+      // Assertions list
+      html += '<ul class="assertion-list">';
+      for (const exp of expectations) {
+        const statusClass = exp.passed ? "pass" : "fail";
+        const statusIcon = exp.passed ? "\u2713" : "\u2717";
+        html += '<li class="assertion-item">';
+        html += '<span class="assertion-status ' + statusClass + '">' + statusIcon + '</span>';
+        html += '<span>' + escapeHtml(exp.text) + '</span>';
+        if (exp.evidence) {
+          html += '<div class="assertion-evidence">' + escapeHtml(exp.evidence) + '</div>';
+        }
+        html += '</li>';
+      }
+      html += '</ul>';
+
+      html += '</div>';
+      content.innerHTML = html;
+    }
+
+    function toggleGrades() {
+      const content = document.getElementById("grades-content");
+      const arrow = document.getElementById("grades-arrow");
+      content.classList.toggle("open");
+      arrow.classList.toggle("open");
+    }
+
+    // ---- Previous outputs (collapsible) ----
+    function renderPrevOutputs(run) {
+      const section = document.getElementById("prev-outputs-section");
+      const content = document.getElementById("prev-outputs-content");
+      const prevOutputs = (EMBEDDED_DATA.previous_outputs || {})[run.id];
+
+      if (!prevOutputs || prevOutputs.length === 0) {
+        section.style.display = "none";
+        return;
+      }
+
+      section.style.display = "block";
+      // Reset to collapsed
+      content.classList.remove("open");
+      document.getElementById("prev-outputs-arrow").classList.remove("open");
+
+      // Render the files into the content area
+      content.innerHTML = "";
+      const wrapper = document.createElement("div");
+      wrapper.style.padding = "1rem";
+
+      for (const file of prevOutputs) {
+        const fileDiv = document.createElement("div");
+        fileDiv.className = "output-file";
+
+        const header = document.createElement("div");
+        header.className = "output-file-header";
+        const nameSpan = document.createElement("span");
+        nameSpan.textContent = file.name;
+        header.appendChild(nameSpan);
+        const dlBtn = document.createElement("a");
+        dlBtn.className = "dl-btn";
+        dlBtn.textContent = "Download";
+        dlBtn.download = file.name;
+        dlBtn.href = getDownloadUri(file);
+        header.appendChild(dlBtn);
+        fileDiv.appendChild(header);
+
+        const fc = document.createElement("div");
+        fc.className = "output-file-content";
+
+        if (file.type === "text") {
+          const pre = document.createElement("pre");
+          pre.textContent = file.content;
+          fc.appendChild(pre);
+        } else if (file.type === "image") {
+          const img = document.createElement("img");
+          img.src = file.data_uri;
+          img.alt = file.name;
+          fc.appendChild(img);
+        } else if (file.type === "pdf") {
+          const iframe = document.createElement("iframe");
+          iframe.src = file.data_uri;
+          fc.appendChild(iframe);
+        } else if (file.type === "xlsx") {
+          renderXlsx(fc, file.data_b64);
+        } else if (file.type === "binary") {
+          const a = document.createElement("a");
+          a.className = "download-link";
+          a.href = file.data_uri;
+          a.download = file.name;
+          a.textContent = "Download " + file.name;
+          fc.appendChild(a);
+        }
+
+        fileDiv.appendChild(fc);
+        wrapper.appendChild(fileDiv);
+      }
+
+      content.appendChild(wrapper);
+    }
+
+    function togglePrevOutputs() {
+      const content = document.getElementById("prev-outputs-content");
+      const arrow = document.getElementById("prev-outputs-arrow");
+      content.classList.toggle("open");
+      arrow.classList.toggle("open");
+    }
+
+    // ---- Feedback (saved to server -> feedback.json) ----
+    function saveCurrentFeedback() {
+      const run = EMBEDDED_DATA.runs[currentIndex];
+      const text = document.getElementById("feedback").value;
+
+      if (text.trim() === "") {
+        delete feedbackMap[run.id];
+      } else {
+        feedbackMap[run.id] = text;
+      }
+
+      // Build reviews array from map
+      const reviews = [];
+      for (const [run_id, feedback] of Object.entries(feedbackMap)) {
+        if (feedback.trim()) {
+          reviews.push({ run_id, feedback, timestamp: new Date().toISOString() });
+        }
+      }
+
+      fetch("/api/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reviews, status: "in_progress" }),
+      }).then(() => {
+        document.getElementById("feedback-status").textContent = "Saved";
+      }).catch(() => {
+        // Static mode or server unavailable — no-op on auto-save,
+        // feedback will be downloaded on final submit
+        document.getElementById("feedback-status").textContent = "Will download on submit";
+      });
+    }
+
+    // ---- Done ----
+    function showDoneDialog() {
+      // Save current textarea to feedbackMap (but don't POST yet)
+      const run = EMBEDDED_DATA.runs[currentIndex];
+      const text = document.getElementById("feedback").value;
+      if (text.trim() === "") {
+        delete feedbackMap[run.id];
+      } else {
+        feedbackMap[run.id] = text;
+      }
+
+      // POST once with status: complete — include ALL runs so the model
+      // can distinguish "no feedback" (looks good) from "not reviewed"
+      const reviews = [];
+      const ts = new Date().toISOString();
+      for (const r of EMBEDDED_DATA.runs) {
+        reviews.push({ run_id: r.id, feedback: feedbackMap[r.id] || "", timestamp: ts });
+      }
+      const payload = JSON.stringify({ reviews, status: "complete" }, null, 2);
+      fetch("/api/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: payload,
+      }).then(() => {
+        document.getElementById("done-overlay").classList.add("visible");
+      }).catch(() => {
+        // Server not available (static mode) — download as file
+        const blob = new Blob([payload], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "feedback.json";
+        a.click();
+        URL.revokeObjectURL(url);
+        document.getElementById("done-overlay").classList.add("visible");
+      });
+    }
+
+    function closeDoneDialog() {
+      // Reset status back to in_progress
+      saveCurrentFeedback();
+      document.getElementById("done-overlay").classList.remove("visible");
+    }
+
+    // ---- Toast ----
+    function showToast(message) {
+      const toast = document.getElementById("toast");
+      toast.textContent = message;
+      toast.classList.add("visible");
+      setTimeout(() => toast.classList.remove("visible"), 2000);
+    }
+
+    // ---- Keyboard nav ----
+    document.addEventListener("keydown", (e) => {
+      // Don't capture when typing in textarea
+      if (e.target.tagName === "TEXTAREA") return;
+
+      if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+        e.preventDefault();
+        navigate(-1);
+      } else if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+        e.preventDefault();
+        navigate(1);
+      }
+    });
+
+    // ---- Util ----
+    function getDownloadUri(file) {
+      if (file.data_uri) return file.data_uri;
+      if (file.data_b64) return "data:application/octet-stream;base64," + file.data_b64;
+      if (file.type === "text") return "data:text/plain;charset=utf-8," + encodeURIComponent(file.content);
+      return "#";
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement("div");
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // ---- View switching ----
+    function switchView(view) {
+      document.querySelectorAll(".view-tab").forEach(t => t.classList.remove("active"));
+      document.querySelectorAll(".view-panel").forEach(p => p.classList.remove("active"));
+      document.querySelector(`[onclick="switchView('${view}')"]`).classList.add("active");
+      document.getElementById("panel-" + view).classList.add("active");
+    }
+
+    // ---- Benchmark rendering ----
+    function renderBenchmark() {
+      const data = EMBEDDED_DATA.benchmark;
+      if (!data) return;
+
+      // Show the tabs
+      document.getElementById("view-tabs").style.display = "flex";
+
+      const container = document.getElementById("benchmark-content");
+      const summary = data.run_summary || {};
+      const metadata = data.metadata || {};
+      const notes = data.notes || [];
+
+      let html = "";
+
+      // Header
+      html += "<h2 style='font-family: Poppins, sans-serif; margin-bottom: 0.5rem;'>Benchmark Results</h2>";
+      html += "<p style='color: var(--text-muted); font-size: 0.875rem; margin-bottom: 1.25rem;'>";
+      if (metadata.skill_name) html += "<strong>" + escapeHtml(metadata.skill_name) + "</strong> &mdash; ";
+      if (metadata.timestamp) html += metadata.timestamp + " &mdash; ";
+      if (metadata.evals_run) html += "Evals: " + metadata.evals_run.join(", ") + " &mdash; ";
+      html += (metadata.runs_per_configuration || "?") + " runs per configuration";
+      html += "</p>";
+
+      // Summary table
+      html += '<table class="benchmark-table">';
+
+      function fmtStat(stat, pct) {
+        if (!stat) return "—";
+        const suffix = pct ? "%" : "";
+        const m = pct ? (stat.mean * 100).toFixed(0) : stat.mean.toFixed(1);
+        const s = pct ? (stat.stddev * 100).toFixed(0) : stat.stddev.toFixed(1);
+        return m + suffix + " ± " + s + suffix;
+      }
+
+      function deltaClass(val) {
+        if (!val) return "";
+        const n = parseFloat(val);
+        if (n > 0) return "benchmark-delta-positive";
+        if (n < 0) return "benchmark-delta-negative";
+        return "";
+      }
+
+      // Discover config names dynamically (everything except "delta")
+      const configs = Object.keys(summary).filter(k => k !== "delta");
+      const configA = configs[0] || "config_a";
+      const configB = configs[1] || "config_b";
+      const labelA = configA.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+      const labelB = configB.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+      const a = summary[configA] || {};
+      const b = summary[configB] || {};
+      const delta = summary.delta || {};
+
+      html += "<thead><tr><th>Metric</th><th>" + escapeHtml(labelA) + "</th><th>" + escapeHtml(labelB) + "</th><th>Delta</th></tr></thead>";
+      html += "<tbody>";
+
+      html += "<tr><td><strong>Pass Rate</strong></td>";
+      html += "<td>" + fmtStat(a.pass_rate, true) + "</td>";
+      html += "<td>" + fmtStat(b.pass_rate, true) + "</td>";
+      html += '<td class="' + deltaClass(delta.pass_rate) + '">' + (delta.pass_rate || "—") + "</td></tr>";
+
+      // Time (only show row if data exists)
+      if (a.time_seconds || b.time_seconds) {
+        html += "<tr><td><strong>Time (s)</strong></td>";
+        html += "<td>" + fmtStat(a.time_seconds, false) + "</td>";
+        html += "<td>" + fmtStat(b.time_seconds, false) + "</td>";
+        html += '<td class="' + deltaClass(delta.time_seconds) + '">' + (delta.time_seconds ? delta.time_seconds + "s" : "—") + "</td></tr>";
+      }
+
+      // Tokens (only show row if data exists)
+      if (a.tokens || b.tokens) {
+        html += "<tr><td><strong>Tokens</strong></td>";
+        html += "<td>" + fmtStat(a.tokens, false) + "</td>";
+        html += "<td>" + fmtStat(b.tokens, false) + "</td>";
+        html += '<td class="' + deltaClass(delta.tokens) + '">' + (delta.tokens || "—") + "</td></tr>";
+      }
+
+      html += "</tbody></table>";
+
+      // Per-eval breakdown (if runs data available)
+      const runs = data.runs || [];
+      if (runs.length > 0) {
+        const evalIds = [...new Set(runs.map(r => r.eval_id))].sort((a, b) => a - b);
+
+        html += "<h3 style='font-family: Poppins, sans-serif; margin-bottom: 0.75rem;'>Per-Eval Breakdown</h3>";
+
+        const hasTime = runs.some(r => r.result && r.result.time_seconds != null);
+        const hasErrors = runs.some(r => r.result && r.result.errors > 0);
+
+        for (const evalId of evalIds) {
+          const evalRuns = runs.filter(r => r.eval_id === evalId);
+          const evalName = evalRuns[0] && evalRuns[0].eval_name ? evalRuns[0].eval_name : "Eval " + evalId;
+
+          html += "<h4 style='font-family: Poppins, sans-serif; margin: 1rem 0 0.5rem; color: var(--text);'>" + escapeHtml(evalName) + "</h4>";
+          html += '<table class="benchmark-table">';
+          html += "<thead><tr><th>Config</th><th>Run</th><th>Pass Rate</th>";
+          if (hasTime) html += "<th>Time (s)</th>";
+          if (hasErrors) html += "<th>Crashes During Execution</th>";
+          html += "</tr></thead>";
+          html += "<tbody>";
+
+          // Group by config and render with average rows
+          const configGroups = [...new Set(evalRuns.map(r => r.configuration))];
+          for (let ci = 0; ci < configGroups.length; ci++) {
+            const config = configGroups[ci];
+            const configRuns = evalRuns.filter(r => r.configuration === config);
+            if (configRuns.length === 0) continue;
+
+            const rowClass = ci === 0 ? "benchmark-row-with" : "benchmark-row-without";
+            const configLabel = config.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+
+            for (const run of configRuns) {
+              const r = run.result || {};
+              const prClass = r.pass_rate >= 0.8 ? "benchmark-delta-positive" : r.pass_rate < 0.5 ? "benchmark-delta-negative" : "";
+              html += '<tr class="' + rowClass + '">';
+              html += "<td>" + configLabel + "</td>";
+              html += "<td>" + run.run_number + "</td>";
+              html += '<td class="' + prClass + '">' + ((r.pass_rate || 0) * 100).toFixed(0) + "% (" + (r.passed || 0) + "/" + (r.total || 0) + ")</td>";
+              if (hasTime) html += "<td>" + (r.time_seconds != null ? r.time_seconds.toFixed(1) : "—") + "</td>";
+              if (hasErrors) html += "<td>" + (r.errors || 0) + "</td>";
+              html += "</tr>";
+            }
+
+            // Average row
+            const rates = configRuns.map(r => (r.result || {}).pass_rate || 0);
+            const avgRate = rates.reduce((a, b) => a + b, 0) / rates.length;
+            const avgPrClass = avgRate >= 0.8 ? "benchmark-delta-positive" : avgRate < 0.5 ? "benchmark-delta-negative" : "";
+            html += '<tr class="benchmark-row-avg ' + rowClass + '">';
+            html += "<td>" + configLabel + "</td>";
+            html += "<td>Avg</td>";
+            html += '<td class="' + avgPrClass + '">' + (avgRate * 100).toFixed(0) + "%</td>";
+            if (hasTime) {
+              const times = configRuns.map(r => (r.result || {}).time_seconds).filter(t => t != null);
+              html += "<td>" + (times.length ? (times.reduce((a, b) => a + b, 0) / times.length).toFixed(1) : "—") + "</td>";
+            }
+            if (hasErrors) html += "<td></td>";
+            html += "</tr>";
+          }
+          html += "</tbody></table>";
+
+          // Per-assertion detail for this eval
+          const runsWithExpectations = {};
+          for (const config of configGroups) {
+            runsWithExpectations[config] = evalRuns.filter(r => r.configuration === config && r.expectations && r.expectations.length > 0);
+          }
+          const hasAnyExpectations = Object.values(runsWithExpectations).some(runs => runs.length > 0);
+          if (hasAnyExpectations) {
+            // Collect all unique assertion texts across all configs
+            const allAssertions = [];
+            const seen = new Set();
+            for (const config of configGroups) {
+              for (const run of runsWithExpectations[config]) {
+                for (const exp of (run.expectations || [])) {
+                  if (!seen.has(exp.text)) {
+                    seen.add(exp.text);
+                    allAssertions.push(exp.text);
+                  }
+                }
+              }
+            }
+
+            html += '<table class="benchmark-table" style="margin-top: 0.5rem;">';
+            html += "<thead><tr><th>Assertion</th>";
+            for (const config of configGroups) {
+              const label = config.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+              html += "<th>" + escapeHtml(label) + "</th>";
+            }
+            html += "</tr></thead><tbody>";
+
+            for (const assertionText of allAssertions) {
+              html += "<tr><td>" + escapeHtml(assertionText) + "</td>";
+
+              for (const config of configGroups) {
+                html += "<td>";
+                for (const run of runsWithExpectations[config]) {
+                  const exp = (run.expectations || []).find(e => e.text === assertionText);
+                  if (exp) {
+                    const cls = exp.passed ? "benchmark-delta-positive" : "benchmark-delta-negative";
+                    const icon = exp.passed ? "\u2713" : "\u2717";
+                    html += '<span class="' + cls + '" title="Run ' + run.run_number + ': ' + escapeHtml(exp.evidence || "") + '">' + icon + "</span> ";
+                  } else {
+                    html += "— ";
+                  }
+                }
+                html += "</td>";
+              }
+              html += "</tr>";
+            }
+            html += "</tbody></table>";
+          }
+        }
+      }
+
+      // Notes
+      if (notes.length > 0) {
+        html += '<div class="benchmark-notes">';
+        html += "<h3>Analysis Notes</h3>";
+        html += "<ul>";
+        for (const note of notes) {
+          html += "<li>" + escapeHtml(note) + "</li>";
+        }
+        html += "</ul></div>";
+      }
+
+      container.innerHTML = html;
+    }
+
+    // ---- Start ----
+    init();
+    renderBenchmark();
+  </script>
+</body>
+</html>
